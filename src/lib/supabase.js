@@ -110,3 +110,103 @@ export const getFaqs = async (category) => {
   const { data, error } = await query;
   return { data, error };
 };
+
+// ─── Admin: Facilities CRUD (super_admin) ────────────────────────────────────
+export const adminCreateFacility = async (data) => {
+  const { data: result, error } = await supabase
+    .from('facilities').insert([data]).select().single();
+  return { data: result, error };
+};
+
+export const adminUpdateFacility = async (id, updates) => {
+  const { data, error } = await supabase
+    .from('facilities').update(updates).eq('id', id).select().single();
+  return { data, error };
+};
+
+export const adminDeleteFacility = async (id) => {
+  const { error } = await supabase.from('facilities').delete().eq('id', id);
+  return { error };
+};
+
+// ─── Admin: Profiles (super_admin) ───────────────────────────────────────────
+export const adminGetProfiles = async () => {
+  const { data, error } = await supabase
+    .from('profiles').select('*, facilities(name)').order('created_at', { ascending: false });
+  return { data, error };
+};
+
+export const adminSetRole = async (userId, role, facilityId = null) => {
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({ role, facility_id: facilityId })
+    .eq('id', userId)
+    .select().single();
+  return { data, error };
+};
+
+// ─── Hospital admin: update own facility ─────────────────────────────────────
+export const hospitalUpdateFacility = async (facilityId, updates) => {
+  const { data, error } = await supabase
+    .from('facilities').update(updates).eq('id', facilityId).select().single();
+  return { data, error };
+};
+
+// ─── Doctor invitations ───────────────────────────────────────────────────────
+export const createDoctorInvitation = async ({ email, facilityId }) => {
+  const { data, error } = await supabase
+    .from('doctor_invitations')
+    .insert([{ email, facility_id: facilityId }])
+    .select().single();
+  return { data, error };
+};
+
+export const getInvitationsByFacility = async (facilityId) => {
+  const { data, error } = await supabase
+    .from('doctor_invitations')
+    .select('*')
+    .eq('facility_id', facilityId)
+    .order('created_at', { ascending: false });
+  return { data, error };
+};
+
+export const validateInvitationToken = async (token) => {
+  const { data, error } = await supabase
+    .from('doctor_invitations')
+    .select('*, facilities(name)')
+    .eq('token', token)
+    .eq('used', false)
+    .gt('expires_at', new Date().toISOString())
+    .single();
+  return { data, error };
+};
+
+export const markInvitationUsed = async (token) => {
+  const { error } = await supabase
+    .from('doctor_invitations').update({ used: true }).eq('token', token);
+  return { error };
+};
+
+// ─── Doctor signup via invitation token ──────────────────────────────────────
+export const doctorSignUpWithToken = async ({ email, password, fullName, token, facilityId }) => {
+  // 1. Create auth user
+  const { data: authData, error: authError } = await supabase.auth.signUp({
+    email, password,
+    options: { data: { full_name: fullName } },
+  });
+  if (authError) return { error: authError };
+
+  // 2. Set role to doctor on their profile
+  const userId = authData.user?.id;
+  if (userId) {
+    await supabase.from('profiles').update({
+      role: 'doctor',
+      facility_id: facilityId,
+      full_name: fullName,
+    }).eq('id', userId);
+
+    // 3. Mark invitation as used
+    await markInvitationUsed(token);
+  }
+  return { data: authData, error: null };
+};
