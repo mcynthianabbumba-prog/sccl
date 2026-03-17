@@ -6,7 +6,6 @@ import L from 'leaflet';
 import { Phone, Navigation, Share2, Heart, Clock, MapPin, CheckCircle, Users, MessageCircle, Building2 } from 'lucide-react';
 import { getFacilityById } from '../lib/supabase';
 import { Badge, Button, Card, Spinner } from '../components/ui';
-import 'leaflet/dist/leaflet.css';
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({

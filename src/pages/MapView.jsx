@@ -6,7 +6,6 @@ import { useNavigate } from 'react-router-dom';
 import { MapPin, Navigation, Building2 } from 'lucide-react';
 import { getFacilities } from '../lib/supabase';
 import { Badge, Button, Spinner } from '../components/ui';
-import 'leaflet/dist/leaflet.css';
 import { useGeolocation } from '../hooks/useGeolocation';
 
 // Fix leaflet default icon issue with webpack

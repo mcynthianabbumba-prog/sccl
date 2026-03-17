@@ -7,14 +7,8 @@
     <meta name="description" content="Sickle Cell Care Locator – Find specialized SCD facilities and expert care near you in Mukono District, Uganda." />
     <title>SCCL – Sickle Cell Care Locator</title>
     <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
-    <!-- Leaflet CSS -->
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"
-      integrity="sha512-Zcn6bjR/8RZbLEpLIeOwNtzREBAJnUKESxces60Mpoj+2okopSAcSUIUOseddDm0cxnGQzxIR7vJgsLZbdLE3Q=="
-      crossorigin="anonymous"
-      referrerpolicy="no-referrer"
-    />
+    <!-- Leaflet CSS — no integrity hash to avoid CDN mismatch blocks -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
