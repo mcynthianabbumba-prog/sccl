@@ -2,34 +2,31 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './lib/AuthContext';
-import { ToastProvider } from './components/ui/Toast';
-import { ErrorBoundary } from './components/ui/ErrorBoundary';
-import { LoadingScreen } from './components/ui/LoadingScreen';
-import { Navbar } from './components/layout/Navbar';
-import { Footer } from './components/layout/Footer';
-import { MobileNav } from './components/layout/MobileNav';
+import { ToastProvider }   from './components/ui/Toast';
+import { ErrorBoundary }   from './components/ui/ErrorBoundary';
+import { LoadingScreen }   from './components/ui/LoadingScreen';
+import { Navbar }          from './components/layout/Navbar';
+import { Footer }          from './components/layout/Footer';
+import { MobileNav }       from './components/layout/MobileNav';
 
-// Public pages
-import { Home }                  from './pages/Home';
-import { Login, ForgotPassword } from './pages/Auth';
-import { ResetPassword }         from './pages/ResetPassword';
-import { MapView }               from './pages/MapView';
-import { SearchPage }            from './pages/Search';
-import { FacilityProfile }       from './pages/FacilityProfile';
-import { Emergency }             from './pages/Emergency';
-import { Education }             from './pages/Education';
-import { HowItWorks }            from './pages/HowItWorks';
-import { Profile }               from './pages/Profile';
-import { NotFound }              from './pages/NotFound';
+import { Home }                   from './pages/Home';
+import { Login, ForgotPassword }  from './pages/Auth';
+import { ResetPassword }          from './pages/ResetPassword';
+import { MapView }                from './pages/MapView';
+import { SearchPage }             from './pages/Search';
+import { FacilityProfile }        from './pages/FacilityProfile';
+import { Emergency }              from './pages/Emergency';
+import { Education }              from './pages/Education';
+import { HowItWorks }             from './pages/HowItWorks';
+import { Profile }                from './pages/Profile';
+import { NotFound }               from './pages/NotFound';
+import { DoctorLogin }            from './pages/DoctorLogin';
+import { DoctorSignup }           from './pages/DoctorSignup';
+import { DoctorDashboard }        from './pages/DoctorDashboard';
+import { AdminOwner }             from './pages/admin/AdminOwner';
+import { AdminHospital }          from './pages/admin/AdminHospital';
 
-// Staff / admin pages
-import { DoctorLogin }           from './pages/DoctorLogin';
-import { DoctorSignup }          from './pages/DoctorSignup';
-import { DoctorDashboard }       from './pages/DoctorDashboard';
-import { AdminOwner }            from './pages/admin/AdminOwner';
-import { AdminHospital }         from './pages/admin/AdminHospital';
-
-// ─── Route guards ─────────────────────────────────────────────────────────────
+// ─── Guards ───────────────────────────────────────────────────────────────────
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
   if (loading) return <LoadingScreen message="Checking session…" />;
@@ -42,12 +39,30 @@ const GuestRoute = ({ children }) => {
   return !user ? children : <Navigate to="/" replace />;
 };
 
-// Staff guard — any authenticated staff (doctor / hospital_admin / super_admin)
+// Any authenticated staff member (doctor / hospital_admin / super_admin)
 const StaffRoute = ({ children }) => {
   const { user, role, loading } = useAuth();
   if (loading) return <LoadingScreen message="Checking credentials…" />;
-  if (!user) return <Navigate to="/doctor/login" replace />;
+  if (!user)   return <Navigate to="/doctor/login" replace />;
   if (!role || role === 'patient') return <Navigate to="/doctor/login" replace />;
+  return children;
+};
+
+// super_admin only
+const SuperAdminRoute = ({ children }) => {
+  const { user, isSuperAdmin, loading } = useAuth();
+  if (loading)       return <LoadingScreen message="Checking credentials…" />;
+  if (!user)         return <Navigate to="/doctor/login" replace />;
+  if (!isSuperAdmin) return <Navigate to="/doctor/dashboard" replace />;
+  return children;
+};
+
+// hospital_admin (or super_admin, who can access everything)
+const HospitalAdminRoute = ({ children }) => {
+  const { user, isHospitalAdmin, isSuperAdmin, loading } = useAuth();
+  if (loading)                             return <LoadingScreen message="Checking credentials…" />;
+  if (!user)                               return <Navigate to="/doctor/login" replace />;
+  if (!isHospitalAdmin && !isSuperAdmin)   return <Navigate to="/doctor/dashboard" replace />;
   return children;
 };
 
@@ -55,57 +70,45 @@ const StaffRoute = ({ children }) => {
 const AppLayout = ({ children }) => (
   <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
     <Navbar />
-    <main style={{ flex: 1 }}>
-      <ErrorBoundary>{children}</ErrorBoundary>
-    </main>
+    <main style={{ flex: 1 }}><ErrorBoundary>{children}</ErrorBoundary></main>
     <Footer />
     <MobileNav />
   </div>
 );
 
 const BareLayout = ({ children }) => (
-  <div style={{ minHeight: '100vh' }}>
-    <ErrorBoundary>{children}</ErrorBoundary>
-  </div>
+  <div style={{ minHeight: '100vh' }}><ErrorBoundary>{children}</ErrorBoundary></div>
 );
 
 // ─── Routes ──────────────────────────────────────────────────────────────────
 function AppRoutes() {
   return (
     <Routes>
-      {/* ── Public ── */}
-      <Route path="/"              element={<AppLayout><Home /></AppLayout>} />
-      <Route path="/map"           element={<AppLayout><MapView /></AppLayout>} />
-      <Route path="/search"        element={<AppLayout><SearchPage /></AppLayout>} />
-      <Route path="/facility/:id"  element={<AppLayout><FacilityProfile /></AppLayout>} />
-      <Route path="/emergency"     element={<AppLayout><Emergency /></AppLayout>} />
-      <Route path="/education"     element={<AppLayout><Education /></AppLayout>} />
-      <Route path="/how-it-works"  element={<AppLayout><HowItWorks /></AppLayout>} />
+      {/* Public */}
+      <Route path="/"             element={<AppLayout><Home /></AppLayout>} />
+      <Route path="/map"          element={<AppLayout><MapView /></AppLayout>} />
+      <Route path="/search"       element={<AppLayout><SearchPage /></AppLayout>} />
+      <Route path="/facility/:id" element={<AppLayout><FacilityProfile /></AppLayout>} />
+      <Route path="/emergency"    element={<AppLayout><Emergency /></AppLayout>} />
+      <Route path="/education"    element={<AppLayout><Education /></AppLayout>} />
+      <Route path="/how-it-works" element={<AppLayout><HowItWorks /></AppLayout>} />
 
-      {/* ── Auth (public users) ── */}
+      {/* Public user auth */}
       <Route path="/login"           element={<GuestRoute><BareLayout><Login /></BareLayout></GuestRoute>} />
       <Route path="/signup"          element={<GuestRoute><BareLayout><Login /></BareLayout></GuestRoute>} />
       <Route path="/forgot-password" element={<GuestRoute><BareLayout><ForgotPassword /></BareLayout></GuestRoute>} />
       <Route path="/reset-password"  element={<BareLayout><ResetPassword /></BareLayout>} />
+      <Route path="/profile"         element={<ProtectedRoute><AppLayout><Profile /></AppLayout></ProtectedRoute>} />
 
-      {/* ── Protected (public users) ── */}
-      <Route path="/profile" element={<ProtectedRoute><AppLayout><Profile /></AppLayout></ProtectedRoute>} />
+      {/* Staff portal — not in public nav */}
+      <Route path="/doctor/login"     element={<BareLayout><DoctorLogin /></BareLayout>} />
+      <Route path="/doctor/signup"    element={<BareLayout><DoctorSignup /></BareLayout>} />
+      <Route path="/doctor/dashboard" element={<StaffRoute><BareLayout><DoctorDashboard /></BareLayout></StaffRoute>} />
 
-      {/* ── Staff portal ── */}
-      {/* Doctor login — hidden from nav, but accessible if you know the URL */}
-      <Route path="/doctor/login"    element={<BareLayout><DoctorLogin /></BareLayout>} />
-      {/* Doctor signup — only via invitation token link */}
-      <Route path="/doctor/signup"   element={<BareLayout><DoctorSignup /></BareLayout>} />
-      {/* Doctor dashboard — requires staff role */}
-      <Route path="/doctor/dashboard"element={<StaffRoute><BareLayout><DoctorDashboard /></BareLayout></StaffRoute>} />
+      {/* Admin portals — not in public nav */}
+      <Route path="/admin/owner"    element={<SuperAdminRoute><BareLayout><AdminOwner /></BareLayout></SuperAdminRoute>} />
+      <Route path="/admin/hospital" element={<HospitalAdminRoute><BareLayout><AdminHospital /></BareLayout></HospitalAdminRoute>} />
 
-      {/* ── Admin portals ── hidden from nav, access by URL only ── */}
-      {/* Admin1 — Site owner / super_admin */}
-      <Route path="/admin/owner"    element={<StaffRoute><BareLayout><AdminOwner /></BareLayout></StaffRoute>} />
-      {/* Admin2 — Hospital admin */}
-      <Route path="/admin/hospital" element={<StaffRoute><BareLayout><AdminHospital /></BareLayout></StaffRoute>} />
-
-      {/* ── 404 ── */}
       <Route path="*" element={<AppLayout><NotFound /></AppLayout>} />
     </Routes>
   );
