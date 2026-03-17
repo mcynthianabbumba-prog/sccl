@@ -1,204 +1,411 @@
-// src/pages/Home.jsx
-import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Search, MapPin, Building2, Stethoscope, Siren, ArrowRight, BookOpen, Phone, HelpCircle } from 'lucide-react';
-import { getFeaturedFacilities, getFacilitiesStats } from '../lib/supabase';
-import { Button, Badge, Card, Spinner } from '../components/ui';
+import { useState, useEffect } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { Search, MapPin, Phone, ArrowRight, Star, CheckCircle, AlertTriangle, Activity, Users, Stethoscope } from 'lucide-react'
+import { supabase } from '../lib/supabase'
+import Layout from '../components/layout/Layout'
+import { Button, Card, Badge } from '../components/ui'
 
-// ─── Mini map thumbnail ───────────────────────────────────────────────────────
-const MapThumbnail = () => (
-  <div style={{
-    background: '#e8f0e8', borderRadius: 'var(--radius-lg)', overflow: 'hidden',
-    height: '100%', minHeight: 220, position: 'relative', display: 'flex', alignItems: 'flex-end',
-  }}>
-    {/* Placeholder map visual */}
-    <svg width="100%" height="100%" viewBox="0 0 400 240" style={{ position: 'absolute', inset: 0 }}>
-      <rect width="400" height="240" fill="#dde8dd"/>
-      <path d="M0 80 Q100 60 200 90 Q300 120 400 80" stroke="#b8d4b8" strokeWidth="2" fill="none"/>
-      <path d="M0 140 Q150 110 300 150 Q360 160 400 140" stroke="#b8d4b8" strokeWidth="2" fill="none"/>
-      <path d="M120 0 Q130 80 140 140 Q145 190 150 240" stroke="#c8d8c8" strokeWidth="1.5" fill="none"/>
-      <path d="M250 0 Q260 60 265 130 Q268 190 270 240" stroke="#c8d8c8" strokeWidth="1.5" fill="none"/>
-      {/* Facility markers */}
-      <circle cx="180" cy="110" r="8" fill="#1D4ED8" opacity="0.9"/>
-      <circle cx="280" cy="90" r="6" fill="#10B981" opacity="0.9"/>
-      <circle cx="140" cy="160" r="6" fill="#1D4ED8" opacity="0.9"/>
-      <circle cx="320" cy="140" r="5" fill="#10B981" opacity="0.7"/>
-    </svg>
-    <div style={{
-      position: 'relative', zIndex: 1, background: 'rgba(255,255,255,0.92)',
-      margin: 12, borderRadius: 'var(--radius)', padding: '10px 14px',
-      display: 'flex', alignItems: 'center', gap: 8, backdropFilter: 'blur(4px)',
-    }}>
-      <MapPin size={16} color="var(--blue)" />
-      <div>
-        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--gray-800)', fontFamily: "'Plus Jakarta Sans',sans-serif" }}>Interactive Map</div>
-        <div style={{ fontSize: 11, color: 'var(--gray-500)' }}>Showing 42 available facilities</div>
-      </div>
-    </div>
-  </div>
-);
-
-// ─── Stat card ────────────────────────────────────────────────────────────────
-const StatCard = ({ icon: Icon, label, value, sub, color }) => (
-  <Card style={{ padding: 24, flex: 1, minWidth: 140 }}>
-    <div style={{ width: 36, height: 36, borderRadius: 8, background: `${color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
-      <Icon size={18} color={color} />
-    </div>
-    <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--gray-500)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>{label}</div>
-    <div style={{ fontSize: 32, fontWeight: 800, fontFamily: "'Plus Jakarta Sans',sans-serif", color: 'var(--gray-900)', lineHeight: 1 }}>{value ?? '—'}</div>
-    <Badge color={color === 'var(--red)' ? 'red' : color === 'var(--blue)' ? 'blue' : 'green'} style={{ marginTop: 6 }}>{sub}</Badge>
-  </Card>
-);
-
-// ─── Facility card ────────────────────────────────────────────────────────────
-const FacilityCard = ({ facility }) => {
-  const navigate = useNavigate();
-  const isOpen = true; // simplified
-  return (
-    <Card hover style={{ display: 'flex', flexDirection: 'column' }}>
-      <div style={{ height: 160, background: 'var(--gray-100)', position: 'relative', overflow: 'hidden' }}>
-        {facility.image_url ? (
-          <img src={facility.image_url} alt={facility.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-        ) : (
-          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Building2 size={40} color="var(--gray-300)" />
-          </div>
-        )}
-        <Badge color={isOpen ? 'green' : 'red'} style={{ position: 'absolute', top: 10, right: 10 }}>
-          {isOpen ? 'OPEN NOW' : 'CLOSING SOON'}
-        </Badge>
-      </div>
-      <div style={{ padding: 16, flex: 1, display: 'flex', flexDirection: 'column' }}>
-        <h3 style={{ fontSize: 15, marginBottom: 4 }}>{facility.name}</h3>
-        {facility.tags?.slice(0, 3).map(tag => (
-          <span key={tag} style={{ fontSize: 12, color: 'var(--gray-500)', display: 'block' }}>{tag}</span>
-        ))}
-        <div style={{ fontSize: 12, color: 'var(--gray-500)', marginTop: 6 }}>
-          {facility.opening_hours?.monday && `Mon–Fri: ${facility.opening_hours.monday}`}
-        </div>
-        <div style={{ marginTop: 'auto', paddingTop: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--gray-500)' }}>
-            {facility.has_emergency && <Badge color="red" style={{ fontSize: 10 }}>Open 24/7</Badge>}
-          </div>
-          <Button size="sm" onClick={() => navigate(`/facility/${facility.id}`)}>Details</Button>
-        </div>
-      </div>
-    </Card>
-  );
-};
-
-// ─── Home page ────────────────────────────────────────────────────────────────
-export const Home = () => {
-  const [facilities, setFacilities] = useState([]);
-  const [stats, setStats] = useState({});
-  const [search, setSearch] = useState('');
-  const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
+export default function HomePage() {
+  const [searchQuery, setSearchQuery] = useState('')
+  const [stats, setStats] = useState({ hospitals: 45, diagnosis: 15, emergency: 8 })
+  const [featuredHospitals, setFeaturedHospitals] = useState([])
+  const navigate = useNavigate()
 
   useEffect(() => {
-    Promise.all([getFeaturedFacilities(), getFacilitiesStats()]).then(([fac, st]) => {
-      setFacilities(fac.data || []);
-      setStats(st);
-      setLoading(false);
-    });
-  }, []);
+    async function load() {
+      const { data } = await supabase
+        .from('hospitals')
+        .select('*, hospital_services(*)')
+        .eq('is_active', true)
+        .eq('is_verified', true)
+        .limit(3)
+      if (data) setFeaturedHospitals(data)
+
+      const { count: total } = await supabase.from('hospitals').select('*', { count: 'exact', head: true }).eq('is_active', true)
+      const { count: emergency } = await supabase.from('hospitals').select('*', { count: 'exact', head: true }).eq('emergency_available', true)
+      if (total) setStats(s => ({ ...s, hospitals: total, emergency: emergency || 8 }))
+    }
+    load()
+  }, [])
 
   const handleSearch = (e) => {
-    e.preventDefault();
-    navigate(`/search?q=${encodeURIComponent(search)}`);
-  };
+    e.preventDefault()
+    if (searchQuery.trim()) navigate(`/search?q=${encodeURIComponent(searchQuery)}`)
+    else navigate('/search')
+  }
+
+  const HeroStat = ({ icon: Icon, value, label, color }) => (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: '12px',
+      background: 'var(--bg-secondary)',
+      border: '1px solid var(--border-color)',
+      borderRadius: 'var(--radius-lg)',
+      padding: '16px 20px',
+    }}>
+      <div style={{
+        width: 40, height: 40, borderRadius: 'var(--radius-md)',
+        background: color + '18', color,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        flexShrink: 0,
+      }}>
+        <Icon size={20} />
+      </div>
+      <div>
+        <div style={{ fontFamily: 'var(--font-display)', fontSize: '24px', fontWeight: 800, lineHeight: 1 }}>
+          {value}
+        </div>
+        <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>{label}</div>
+      </div>
+    </div>
+  )
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <Layout>
       {/* Hero */}
-      <section style={{ background: '#fff', borderBottom: '1px solid var(--gray-100)' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '56px 24px 48px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 48, alignItems: 'center' }}>
-          <div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--blue)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>Mukono District Health Network</div>
-            <h1 style={{ fontSize: 48, fontWeight: 800, lineHeight: 1.1, marginBottom: 16 }}>
-              Sickle Cell Care<br />
-              <span style={{ color: 'var(--blue)' }}>Locator</span>
-            </h1>
-            <p style={{ fontSize: 16, color: 'var(--gray-500)', marginBottom: 28, lineHeight: 1.7 }}>
-              Find specialized facilities and expert care for Sickle Cell Disease near you in Mukono District.
-            </p>
-            <form onSubmit={handleSearch} style={{ display: 'flex', gap: 10 }}>
-              <div style={{ flex: 1, position: 'relative' }}>
-                <Search size={16} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--gray-400)' }} />
-                <input
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                  placeholder="Search for health facilities, clinics, or services..."
-                  style={{
-                    width: '100%', padding: '12px 14px 12px 42px',
-                    border: '1.5px solid var(--gray-200)', borderRadius: 'var(--radius-sm)',
-                    fontSize: 14, outline: 'none', fontFamily: 'inherit',
-                  }}
-                />
-              </div>
-              <Button type="submit" size="lg">Search</Button>
-            </form>
-          </div>
-          <div style={{ height: 280 }}>
-            <Link to="/map" style={{ display: 'block', height: '100%' }}>
-              <MapThumbnail />
-            </Link>
-          </div>
-        </div>
-      </section>
+      <section style={{
+        background: 'var(--bg-primary)',
+        paddingTop: '72px', paddingBottom: '80px',
+        position: 'relative', overflow: 'hidden',
+      }}>
+        {/* Decorative bg */}
+        <div style={{
+          position: 'absolute', top: '-200px', right: '-100px',
+          width: '600px', height: '600px',
+          background: 'radial-gradient(circle, var(--blue-100) 0%, transparent 70%)',
+          opacity: 0.6, pointerEvents: 'none',
+        }} />
 
-      {/* Stats */}
-      <section style={{ background: '#fff', borderBottom: '1px solid var(--gray-100)' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '24px', display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-          <StatCard icon={Building2} label="Total Health Facilities" value={loading ? '…' : stats.totalFacilities} sub="Available" color="var(--blue)" />
-          <StatCard icon={Stethoscope} label="Diagnosis Services" value={loading ? '…' : stats.diagnosisServices} sub="Specialized" color="var(--blue-light)" />
-          <StatCard icon={Siren} label="Emergency Care" value={loading ? '…' : stats.emergencyCare} sub="24/7 Units" color="var(--red)" />
+        <div className="container" style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px', position: 'relative' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '60px', alignItems: 'center' }}
+               className="hero-grid">
+
+            {/* Left */}
+            <div className="animate-fade-in">
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: '8px',
+                background: 'var(--blue-50)', border: '1px solid var(--blue-200)',
+                borderRadius: 'var(--radius-full)', padding: '5px 14px',
+                fontSize: '12px', fontWeight: 600, color: 'var(--blue-600)',
+                marginBottom: '20px', letterSpacing: '0.04em',
+              }}>
+                <Activity size={12} /> MUKONO DISTRICT HEALTH NETWORK
+              </div>
+
+              <h1 style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: 'clamp(36px, 5vw, 56px)',
+                fontWeight: 800, lineHeight: 1.1,
+                letterSpacing: '-0.03em',
+                marginBottom: '20px',
+                color: 'var(--text-primary)',
+              }}>
+                Sickle Cell Care{' '}
+                <span style={{ color: 'var(--accent-primary)' }}>Locator</span>
+              </h1>
+
+              <p style={{
+                fontSize: '17px', color: 'var(--text-secondary)', lineHeight: 1.7,
+                marginBottom: '32px', maxWidth: '480px',
+              }}>
+                Find specialized facilities and expert care for Sickle Cell Disease near you in Mukono District, Uganda.
+              </p>
+
+              {/* Search bar */}
+              <form onSubmit={handleSearch}>
+                <div style={{
+                  display: 'flex', gap: '8px',
+                  background: 'var(--bg-secondary)',
+                  border: '1.5px solid var(--border-strong)',
+                  borderRadius: 'var(--radius-xl)',
+                  padding: '6px 6px 6px 16px',
+                  boxShadow: 'var(--shadow-md)',
+                  maxWidth: '500px',
+                }}>
+                  <Search size={18} style={{ color: 'var(--text-muted)', flexShrink: 0, alignSelf: 'center' }} />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    placeholder="Search facilities, clinics, or services..."
+                    style={{
+                      flex: 1, border: 'none', background: 'none',
+                      outline: 'none', fontSize: '14px',
+                      color: 'var(--text-primary)', fontFamily: 'var(--font-body)',
+                    }}
+                  />
+                  <Button type="submit" variant="primary" size="sm" style={{ borderRadius: '20px' }}>
+                    Search
+                  </Button>
+                </div>
+              </form>
+
+              <div style={{ display: 'flex', gap: '12px', marginTop: '16px', flexWrap: 'wrap' }}>
+                {['SCD Testing', 'Blood Transfusion', 'Pediatrics', 'Emergency'].map(tag => (
+                  <button
+                    key={tag}
+                    onClick={() => navigate(`/search?q=${tag}`)}
+                    style={{
+                      padding: '4px 12px', borderRadius: 'var(--radius-full)',
+                      background: 'var(--bg-tertiary)',
+                      border: '1px solid var(--border-color)',
+                      fontSize: '12px', color: 'var(--text-secondary)',
+                      cursor: 'pointer', transition: 'all var(--transition-fast)',
+                      fontFamily: 'var(--font-body)',
+                    }}
+                    onMouseEnter={e => {
+                      e.target.style.background = 'var(--blue-50)'
+                      e.target.style.color = 'var(--blue-600)'
+                      e.target.style.borderColor = 'var(--blue-200)'
+                    }}
+                    onMouseLeave={e => {
+                      e.target.style.background = 'var(--bg-tertiary)'
+                      e.target.style.color = 'var(--text-secondary)'
+                      e.target.style.borderColor = 'var(--border-color)'
+                    }}
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Right - Map preview */}
+            <div className="animate-fade-in-delay-1 hero-map">
+              <div style={{
+                background: 'var(--bg-secondary)',
+                border: '1px solid var(--border-color)',
+                borderRadius: 'var(--radius-xl)',
+                overflow: 'hidden',
+                boxShadow: 'var(--shadow-xl)',
+              }}>
+                <div style={{ height: '280px', background: 'linear-gradient(135deg, #e8f0fe, #c7d7fb)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
+                  <div style={{ position: 'absolute', inset: 0, backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cpath d='M0 50 Q25 25 50 50 Q75 75 100 50' stroke='%23bfdbfe' stroke-width='1' fill='none'/%3E%3Cpath d='M0 70 Q25 45 50 70 Q75 95 100 70' stroke='%23bfdbfe' stroke-width='1' fill='none'/%3E%3Cpath d='M0 30 Q25 5 50 30 Q75 55 100 30' stroke='%23bfdbfe' stroke-width='1' fill='none'/%3E%3C/svg%3E\")", opacity: 0.7 }} />
+                  <div style={{ textAlign: 'center', position: 'relative' }}>
+                    <div style={{ fontSize: '48px', marginBottom: '8px' }}>🗺️</div>
+                    <p style={{ fontSize: '14px', color: 'var(--blue-600)', fontWeight: 600 }}>Interactive Map</p>
+                    <p style={{ fontSize: '12px', color: 'var(--blue-500)' }}>Showing {stats.hospitals} available facilities</p>
+                  </div>
+                  {/* Pins */}
+                  {[
+                    { top: '30%', left: '40%', emergency: false },
+                    { top: '55%', left: '60%', emergency: true },
+                    { top: '40%', left: '70%', emergency: false },
+                  ].map((pin, i) => (
+                    <div key={i} style={{
+                      position: 'absolute', top: pin.top, left: pin.left,
+                      width: 20, height: 20,
+                      background: pin.emergency ? 'var(--accent-emergency)' : 'var(--accent-primary)',
+                      borderRadius: '50% 50% 50% 0', transform: 'rotate(-45deg)',
+                      border: '2px solid white', boxShadow: 'var(--shadow-md)',
+                    }} />
+                  ))}
+                </div>
+                <div style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', gap: '16px', fontSize: '12px', color: 'var(--text-muted)' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent-primary)', display: 'inline-block' }} />
+                      General Care
+                    </span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent-emergency)', display: 'inline-block' }} />
+                      Emergency
+                    </span>
+                  </div>
+                  <Link to="/map" style={{
+                    fontSize: '13px', color: 'var(--accent-primary)', fontWeight: 600,
+                    textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px',
+                  }}>
+                    Open Map <ArrowRight size={13} />
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Stats Row */}
+          <div style={{
+            display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: '16px', marginTop: '48px',
+          }} className="stats-grid">
+            <HeroStat icon={Activity} value={stats.hospitals} label="Total Health Facilities" color="var(--accent-primary)" />
+            <HeroStat icon={Stethoscope} value={stats.diagnosis} label="Diagnosis Services" color="var(--accent-secondary)" />
+            <HeroStat icon={AlertTriangle} value={stats.emergency} label="24/7 Emergency Units" color="var(--accent-emergency)" />
+          </div>
         </div>
       </section>
 
       {/* Featured Facilities */}
-      <section style={{ maxWidth: 1200, margin: '40px auto', padding: '0 24px', width: '100%' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 24 }}>
-          <div>
-            <h2 style={{ fontSize: 22 }}>Featured Facilities</h2>
-            <p style={{ fontSize: 14, color: 'var(--gray-500)', marginTop: 4 }}>Recommended specialized centers in the district</p>
+      <section style={{ padding: '64px 0', background: 'var(--bg-secondary)' }}>
+        <div className="container" style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+            <div>
+              <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '28px', fontWeight: 800, marginBottom: '6px' }}>
+                Featured Facilities
+              </h2>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>
+                Recommended specialized centers in the district
+              </p>
+            </div>
+            <Link to="/search" style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              fontSize: '14px', color: 'var(--accent-primary)', fontWeight: 600,
+              textDecoration: 'none',
+            }}>
+              View All <ArrowRight size={15} />
+            </Link>
           </div>
-          <Link to="/search" style={{ fontSize: 14, color: 'var(--blue)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
-            View All <ArrowRight size={14} />
-          </Link>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
+            {featuredHospitals.length > 0 ? featuredHospitals.map(hospital => (
+              <FacilityCard key={hospital.id} hospital={hospital} />
+            )) : (
+              // Placeholder skeletons
+              [1, 2, 3].map(i => (
+                <div key={i} style={{
+                  background: 'var(--bg-card)', border: '1px solid var(--border-color)',
+                  borderRadius: 'var(--radius-lg)', overflow: 'hidden',
+                }}>
+                  <div className="skeleton" style={{ height: '160px' }} />
+                  <div style={{ padding: '16px' }}>
+                    <div className="skeleton" style={{ height: '16px', width: '70%', marginBottom: '8px' }} />
+                    <div className="skeleton" style={{ height: '12px', width: '50%', marginBottom: '12px' }} />
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      {[1, 2].map(j => <div key={j} className="skeleton" style={{ height: '20px', width: '70px' }} />)}
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </div>
-        {loading ? (
-          <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}><Spinner /></div>
-        ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
-            {facilities.map(f => <FacilityCard key={f.id} facility={f} />)}
-          </div>
-        )}
       </section>
 
-      {/* Resources */}
-      <section style={{ maxWidth: 1200, margin: '0 auto 56px', padding: '0 24px', width: '100%' }}>
-        <h2 style={{ fontSize: 22, marginBottom: 6 }}>Resources & Support</h2>
-        <p style={{ fontSize: 14, color: 'var(--gray-500)', marginBottom: 24 }}>Tools to help you navigate care</p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
-          {[
-            { icon: HelpCircle, title: 'How it works', desc: 'Learn how to use the locator and navigate the healthcare system.', link: '/how-it-works', cta: 'Read Guide', color: 'var(--blue)' },
-            { icon: Phone, title: 'Emergency Contacts', desc: 'Direct lines to emergency responders and hospital triage units.', link: '/emergency', cta: 'Get Numbers', color: 'var(--red)' },
-            { icon: BookOpen, title: 'SCD Education', desc: 'Essential information about Sickle Cell management and prevention.', link: '/education', cta: 'Learn More', color: 'var(--blue-light)' },
-          ].map(({ icon: Icon, title, desc, link, cta, color }) => (
-            <Card key={title} hover style={{ padding: 24 }}>
-              <div style={{ width: 40, height: 40, borderRadius: 10, background: `${color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
-                <Icon size={20} color={color} />
-              </div>
-              <h3 style={{ fontSize: 15, marginBottom: 8 }}>{title}</h3>
-              <p style={{ fontSize: 13, color: 'var(--gray-500)', lineHeight: 1.6, marginBottom: 16 }}>{desc}</p>
-              <Link to={link} style={{ fontSize: 13, fontWeight: 700, color, display: 'flex', alignItems: 'center', gap: 4 }}>
-                {cta} <ArrowRight size={12} />
-              </Link>
-            </Card>
-          ))}
+      {/* Resources & Support */}
+      <section style={{ padding: '64px 0', background: 'var(--bg-primary)' }}>
+        <div className="container" style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px' }}>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '28px', fontWeight: 800, marginBottom: '8px' }}>
+            Resources & Support
+          </h2>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: '32px', fontSize: '14px' }}>
+            Everything you need to navigate sickle cell care in Mukono
+          </p>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '16px' }}>
+            {[
+              {
+                icon: '📖', label: 'How It Works', color: '#2563eb',
+                desc: 'Learn how to use the locator and navigate the healthcare system.',
+                link: '/how-it-works', cta: 'Read Guide',
+              },
+              {
+                icon: '📞', label: 'Emergency Contacts', color: '#dc2626',
+                desc: 'Direct lines to emergency responders and hospital triage units.',
+                link: '/emergency', cta: 'Get Numbers',
+              },
+              {
+                icon: '🔬', label: 'SCD Information', color: '#0ea5e9',
+                desc: 'Essential information about Sickle Cell management and prevention.',
+                link: '/search', cta: 'Learn More',
+              },
+            ].map(({ icon, label, color, desc, link, cta }) => (
+              <Card key={label} hover>
+                <div style={{
+                  width: 44, height: 44, borderRadius: 'var(--radius-md)',
+                  background: color + '15', fontSize: '22px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  marginBottom: '14px',
+                }}>
+                  {icon}
+                </div>
+                <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '16px', fontWeight: 700, marginBottom: '8px' }}>
+                  {label}
+                </h3>
+                <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '16px' }}>
+                  {desc}
+                </p>
+                <Link to={link} style={{
+                  fontSize: '13px', fontWeight: 600, color,
+                  textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px',
+                }}>
+                  {cta} <ArrowRight size={13} />
+                </Link>
+              </Card>
+            ))}
+          </div>
         </div>
       </section>
-    </div>
-  );
-};
+
+      <style>{`
+        @media (max-width: 900px) {
+          .hero-grid { grid-template-columns: 1fr !important; gap: 32px !important; }
+          .hero-map { display: none; }
+        }
+        @media (max-width: 640px) {
+          .stats-grid { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
+    </Layout>
+  )
+}
+
+function FacilityCard({ hospital }) {
+  const services = hospital.hospital_services?.slice(0, 3) || []
+  const isOpen = true // Would calculate from operating_hours
+
+  return (
+    <Link to={`/facility/${hospital.slug || hospital.id}`} style={{ textDecoration: 'none' }}>
+      <Card hover padding={false}>
+        <div style={{
+          height: '160px',
+          background: 'linear-gradient(135deg, #dbeafe, #bfdbfe)',
+          borderRadius: 'var(--radius-lg) var(--radius-lg) 0 0',
+          position: 'relative', overflow: 'hidden',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          {hospital.photo_url ? (
+            <img src={hospital.photo_url} alt={hospital.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          ) : (
+            <div style={{ fontSize: '40px' }}>🏥</div>
+          )}
+          <div style={{
+            position: 'absolute', top: '10px', right: '10px',
+          }}>
+            <Badge variant={isOpen ? 'success' : 'default'} size="sm">
+              {isOpen ? 'Open Now' : 'Closed'}
+            </Badge>
+          </div>
+          {hospital.emergency_available && (
+            <div style={{
+              position: 'absolute', top: '10px', left: '10px',
+            }}>
+              <Badge variant="danger" size="sm">🚨 24/7</Badge>
+            </div>
+          )}
+        </div>
+        <div style={{ padding: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px', marginBottom: '4px' }}>
+            <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
+              {hospital.name}
+            </h3>
+            {hospital.is_verified && <CheckCircle size={15} style={{ color: 'var(--accent-success)', flexShrink: 0, marginTop: '2px' }} />}
+          </div>
+          <p style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '10px' }}>
+            <MapPin size={11} /> {hospital.sub_county || hospital.address}
+          </p>
+          {services.length > 0 && (
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+              {services.map(s => (
+                <Badge key={s.id} variant="primary" size="sm">
+                  {s.service_type.replace(/_/g, ' ')}
+                </Badge>
+              ))}
+            </div>
+          )}
+          <div style={{ marginTop: '12px', fontSize: '12px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <span style={{ color: 'var(--accent-primary)' }}>→</span> View Profile
+          </div>
+        </div>
+      </Card>
+    </Link>
+  )
+}

@@ -1,150 +1,197 @@
-// src/components/layout/Navbar.jsx
-import React, { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Map, Search, Phone, BookOpen, Menu, X, LogOut, User, ChevronDown } from 'lucide-react';
-import { useAuth } from '../../lib/AuthContext';
-import { signOut } from '../../lib/supabase';
-import { useToast } from '../ui/Toast';
+import { useState } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import {
+  Home, Map, Search, Phone, BookOpen, User, Moon, Sun,
+  Menu, X, LogIn, LogOut, ChevronDown, Shield, Activity
+} from 'lucide-react'
+import { useTheme } from '../../context/ThemeContext'
+import { useAuth } from '../../context/AuthContext'
+import { Button } from '../ui'
 
-const Logo = () => (
-  <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
-    <div style={{
-      width: 34, height: 34, background: 'var(--blue)', borderRadius: 8,
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-    }}>
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-        <circle cx="12" cy="12" r="4" fill="white"/>
-        <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" stroke="white" strokeWidth="2" strokeLinecap="round"/>
-      </svg>
-    </div>
-    <span style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontWeight: 800, fontSize: 16, color: 'var(--gray-900)' }}>SCCL</span>
-  </Link>
-);
-
-const NAV_LINKS = [
-  { to: '/',          label: 'Home' },
-  { to: '/map',       label: 'Map',       icon: Map },
-  { to: '/search',    label: 'Search',    icon: Search },
+const navLinks = [
+  { to: '/', label: 'Home', icon: Home },
+  { to: '/map', label: 'Map', icon: Map },
+  { to: '/search', label: 'Search', icon: Search },
   { to: '/emergency', label: 'Emergency', icon: Phone },
-  { to: '/education', label: 'Education', icon: BookOpen },
-];
+]
 
-export const Navbar = () => {
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const navigate = useNavigate();
-  const { pathname } = useLocation();
-  const [mobileOpen,  setMobileOpen]  = useState(false);
-  const [profileOpen, setProfileOpen] = useState(false);
+export default function Navbar() {
+  const { theme, toggle } = useTheme()
+  const { user, profile, signOut } = useAuth()
+  const location = useLocation()
+  const navigate = useNavigate()
+  const [mobileOpen, setMobileOpen] = useState(false)
+  const [userMenuOpen, setUserMenuOpen] = useState(false)
+
+  const isActive = (path) => path === '/'
+    ? location.pathname === '/'
+    : location.pathname.startsWith(path)
 
   const handleSignOut = async () => {
-    const { error } = await signOut();
-    if (error) toast('Failed to sign out', 'error');
-    else {
-      toast('Signed out successfully', 'success');
-      navigate('/login');
-    }
-    setProfileOpen(false);
-  };
-
-  const initials = user?.user_metadata?.full_name
-    ? user.user_metadata.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
-    : user?.email?.[0]?.toUpperCase() || 'U';
+    await signOut()
+    navigate('/')
+    setUserMenuOpen(false)
+  }
 
   return (
     <>
-      <style>{`
-        .nav-link {
-          color: var(--gray-600); font-size: 14px; font-weight: 500;
-          padding: 6px 12px; border-radius: 6px; transition: all 0.15s;
-          font-family: 'Plus Jakarta Sans',sans-serif; text-decoration: none; display: inline-block;
-        }
-        .nav-link:hover  { color: var(--blue); background: var(--blue-pale); }
-        .nav-link.active { color: var(--blue); font-weight: 700; }
-        .profile-dropdown { display: none; }
-        .profile-trigger:hover .profile-dropdown,
-        .profile-trigger:focus-within .profile-dropdown { display: block; }
-      `}</style>
-
       <nav style={{
-        background: '#fff', borderBottom: '1px solid var(--gray-200)',
         position: 'sticky', top: 0, zIndex: 100,
-        boxShadow: '0 1px 8px rgba(0,0,0,.05)',
+        height: 'var(--nav-height)',
+        background: 'var(--bg-secondary)',
+        borderBottom: '1px solid var(--border-color)',
+        backdropFilter: 'blur(12px)',
       }}>
-        <div style={{
-          maxWidth: 1200, margin: '0 auto', padding: '0 24px',
-          height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        <div className="container" style={{
+          height: '100%',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          maxWidth: '1200px', margin: '0 auto', padding: '0 24px',
         }}>
-          <Logo />
+          {/* Logo */}
+          <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
+            <div style={{
+              width: 36, height: 36,
+              background: 'linear-gradient(135deg, var(--blue-600), var(--accent-secondary))',
+              borderRadius: '10px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <Activity size={18} color="white" />
+            </div>
+            <div>
+              <span style={{
+                fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '18px',
+                color: 'var(--text-primary)', letterSpacing: '-0.02em',
+              }}>
+                SCCL
+              </span>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', lineHeight: 1, marginTop: '-1px' }}>
+                Uganda
+              </span>
+            </div>
+          </Link>
 
-          {/* Desktop nav links */}
-          <div className="desktop-nav" style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            {NAV_LINKS.map(({ to, label }) => (
-              <Link key={to} to={to} className={`nav-link${pathname === to ? ' active' : ''}`}>
+          {/* Desktop Nav Links */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}
+               className="desktop-nav">
+            {navLinks.map(({ to, label, icon: Icon }) => (
+              <Link
+                key={to}
+                to={to}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '6px',
+                  padding: '7px 14px',
+                  borderRadius: 'var(--radius-md)',
+                  textDecoration: 'none',
+                  fontSize: '14px', fontWeight: 500,
+                  fontFamily: 'var(--font-body)',
+                  color: isActive(to) ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                  background: isActive(to) ? 'var(--blue-50)' : 'transparent',
+                  transition: 'all var(--transition-fast)',
+                }}
+                onMouseEnter={(e) => !isActive(to) && (e.currentTarget.style.background = 'var(--bg-tertiary)')}
+                onMouseLeave={(e) => !isActive(to) && (e.currentTarget.style.background = 'transparent')}
+              >
+                <Icon size={15} />
                 {label}
               </Link>
             ))}
           </div>
 
           {/* Right side */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {/* Theme Toggle */}
+            <button
+              onClick={toggle}
+              style={{
+                background: 'var(--bg-tertiary)', border: 'none',
+                borderRadius: 'var(--radius-md)', padding: '8px',
+                cursor: 'pointer', display: 'flex', alignItems: 'center',
+                color: 'var(--text-secondary)', transition: 'all var(--transition-fast)',
+              }}
+              title="Toggle theme"
+            >
+              {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+            </button>
+
+            {/* Auth */}
             {user ? (
-              <div style={{ position: 'relative' }} className="profile-trigger">
+              <div style={{ position: 'relative' }}>
                 <button
-                  onClick={() => setProfileOpen(o => !o)}
+                  onClick={() => setUserMenuOpen(!userMenuOpen)}
                   style={{
-                    display: 'flex', alignItems: 'center', gap: 8,
-                    background: 'var(--blue-pale)', border: '1.5px solid var(--blue-pale)',
-                    borderRadius: 20, padding: '5px 12px 5px 6px', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', gap: '8px',
+                    background: 'var(--bg-tertiary)', border: '1px solid var(--border-color)',
+                    borderRadius: 'var(--radius-md)', padding: '6px 12px',
+                    cursor: 'pointer', color: 'var(--text-primary)',
+                    fontFamily: 'var(--font-body)', fontSize: '13px', fontWeight: 500,
                   }}
                 >
                   <div style={{
-                    width: 28, height: 28, borderRadius: '50%', background: 'var(--blue)',
+                    width: 24, height: 24, borderRadius: '50%',
+                    background: 'var(--accent-primary)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 11, fontWeight: 800, color: '#fff',
-                    fontFamily: "'Plus Jakarta Sans',sans-serif",
+                    color: 'white', fontSize: '11px', fontWeight: 700,
                   }}>
-                    {initials}
+                    {profile?.full_name?.[0]?.toUpperCase() || user.email[0].toUpperCase()}
                   </div>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--blue)', fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
-                    {user.user_metadata?.full_name?.split(' ')[0] || 'Account'}
+                  <span style={{ maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {profile?.full_name || user.email}
                   </span>
-                  <ChevronDown size={13} color="var(--blue)" />
+                  <ChevronDown size={14} />
                 </button>
 
-                {profileOpen && (
-                  <div
-                    style={{
-                      position: 'absolute', right: 0, top: 44, background: '#fff',
-                      border: '1px solid var(--gray-200)', borderRadius: 'var(--radius)',
-                      boxShadow: 'var(--shadow-lg)', minWidth: 200, zIndex: 300, overflow: 'hidden',
-                    }}
-                    onMouseLeave={() => setProfileOpen(false)}
-                  >
-                    <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--gray-100)', background: 'var(--gray-50)' }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--gray-800)' }}>
-                        {user.user_metadata?.full_name || 'User'}
-                      </div>
-                      <div style={{ fontSize: 12, color: 'var(--gray-500)', marginTop: 2 }}>{user.email}</div>
-                    </div>
+                {userMenuOpen && (
+                  <div style={{
+                    position: 'absolute', top: 'calc(100% + 8px)', right: 0,
+                    background: 'var(--bg-card)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: 'var(--radius-lg)',
+                    boxShadow: 'var(--shadow-xl)',
+                    minWidth: '180px', overflow: 'hidden',
+                    animation: 'scaleIn 0.15s ease',
+                    transformOrigin: 'top right',
+                  }}>
                     <Link
-                      to="/profile"
-                      onClick={() => setProfileOpen(false)}
-                      style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 16px', color: 'var(--gray-700)', fontSize: 14, textDecoration: 'none', transition: 'background 0.1s' }}
-                      onMouseEnter={e => e.currentTarget.style.background = 'var(--gray-50)'}
-                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                      to="/dashboard"
+                      onClick={() => setUserMenuOpen(false)}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: '10px',
+                        padding: '10px 16px', textDecoration: 'none',
+                        color: 'var(--text-primary)', fontSize: '14px',
+                        transition: 'background var(--transition-fast)',
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-tertiary)'}
+                      onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                     >
-                      <User size={14} /> My Profile
+                      <User size={14} /> My Account
                     </Link>
+                    {profile?.role === 'doctor' && (
+                      <Link
+                        to="/doctor"
+                        onClick={() => setUserMenuOpen(false)}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: '10px',
+                          padding: '10px 16px', textDecoration: 'none',
+                          color: 'var(--text-primary)', fontSize: '14px',
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-tertiary)'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                      >
+                        <Shield size={14} /> Doctor Portal
+                      </Link>
+                    )}
+                    <div style={{ height: '1px', background: 'var(--border-color)', margin: '4px 0' }} />
                     <button
                       onClick={handleSignOut}
                       style={{
-                        width: '100%', display: 'flex', alignItems: 'center', gap: 10,
-                        padding: '11px 16px', border: 'none', background: 'transparent',
-                        color: 'var(--red)', fontSize: 14, cursor: 'pointer', borderTop: '1px solid var(--gray-100)',
+                        display: 'flex', alignItems: 'center', gap: '10px',
+                        padding: '10px 16px', width: '100%',
+                        background: 'none', border: 'none', cursor: 'pointer',
+                        color: 'var(--accent-emergency)', fontSize: '14px',
+                        fontFamily: 'var(--font-body)',
                       }}
-                      onMouseEnter={e => e.currentTarget.style.background = 'var(--red-light)'}
-                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                      onMouseEnter={(e) => e.currentTarget.style.background = '#fef2f2'}
+                      onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                     >
                       <LogOut size={14} /> Sign Out
                     </button>
@@ -152,67 +199,95 @@ export const Navbar = () => {
                 )}
               </div>
             ) : (
-              <div style={{ display: 'flex', gap: 8 }}>
-                <Link to="/login">
-                  <button style={{
-                    padding: '7px 16px', border: '1.5px solid var(--gray-200)', borderRadius: 6,
-                    background: '#fff', color: 'var(--gray-700)', fontWeight: 600, fontSize: 13,
-                    fontFamily: "'Plus Jakarta Sans',sans-serif", cursor: 'pointer',
-                  }}>Sign In</button>
-                </Link>
-                <Link to="/signup">
-                  <button style={{
-                    padding: '7px 16px', border: 'none', borderRadius: 6,
-                    background: 'var(--blue)', color: '#fff', fontWeight: 600, fontSize: 13,
-                    fontFamily: "'Plus Jakarta Sans',sans-serif", cursor: 'pointer',
-                  }}>Get Started</button>
-                </Link>
+              <div style={{ display: 'flex', gap: '8px' }} className="desktop-nav">
+                <Button variant="ghost" size="sm" onClick={() => navigate('/login')}
+                  icon={<LogIn size={14} />}>
+                  Sign In
+                </Button>
+                <Button variant="primary" size="sm" onClick={() => navigate('/signup')}>
+                  Sign Up
+                </Button>
               </div>
             )}
 
-            {/* Mobile hamburger */}
+            {/* Mobile Menu Button */}
             <button
               className="mobile-menu-btn"
-              onClick={() => setMobileOpen(o => !o)}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--gray-700)', display: 'none' }}
+              onClick={() => setMobileOpen(!mobileOpen)}
+              style={{
+                background: 'var(--bg-tertiary)', border: 'none',
+                borderRadius: 'var(--radius-md)', padding: '8px',
+                cursor: 'pointer', display: 'none', alignItems: 'center',
+                color: 'var(--text-secondary)',
+              }}
             >
-              {mobileOpen ? <X size={22} /> : <Menu size={22} />}
+              {mobileOpen ? <X size={18} /> : <Menu size={18} />}
             </button>
           </div>
         </div>
+      </nav>
 
-        {/* Mobile drawer */}
-        {mobileOpen && (
-          <div style={{ borderTop: '1px solid var(--gray-100)', padding: '12px 16px 16px', background: '#fff' }}>
-            {NAV_LINKS.map(({ to, label, icon: Icon }) => (
-              <Link
-                key={to}
-                to={to}
-                onClick={() => setMobileOpen(false)}
+      {/* Mobile Menu Drawer */}
+      {mobileOpen && (
+        <div style={{
+          position: 'fixed', top: 'var(--nav-height)', left: 0, right: 0,
+          background: 'var(--bg-secondary)',
+          borderBottom: '1px solid var(--border-color)',
+          zIndex: 99, padding: '16px',
+          animation: 'fadeIn 0.2s ease',
+        }}>
+          {navLinks.map(({ to, label, icon: Icon }) => (
+            <Link
+              key={to}
+              to={to}
+              onClick={() => setMobileOpen(false)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '12px',
+                padding: '12px 16px', borderRadius: 'var(--radius-md)',
+                textDecoration: 'none', fontSize: '15px', fontWeight: 500,
+                color: isActive(to) ? 'var(--accent-primary)' : 'var(--text-primary)',
+                background: isActive(to) ? 'var(--blue-50)' : 'transparent',
+                marginBottom: '4px',
+              }}
+            >
+              <Icon size={18} />
+              {label}
+            </Link>
+          ))}
+          <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid var(--border-color)' }}>
+            {user ? (
+              <button
+                onClick={handleSignOut}
                 style={{
-                  display: 'flex', alignItems: 'center', gap: 10, padding: '11px 12px',
-                  borderRadius: 8, marginBottom: 2, textDecoration: 'none',
-                  color: pathname === to ? 'var(--blue)' : 'var(--gray-700)',
-                  background: pathname === to ? 'var(--blue-pale)' : 'transparent',
-                  fontWeight: pathname === to ? 700 : 400,
-                  fontSize: 14, fontFamily: "'Plus Jakarta Sans',sans-serif",
+                  display: 'flex', alignItems: 'center', gap: '12px',
+                  padding: '12px 16px', width: '100%',
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  color: 'var(--accent-emergency)', fontSize: '15px',
+                  fontFamily: 'var(--font-body)', borderRadius: 'var(--radius-md)',
                 }}
               >
-                {Icon && <Icon size={16} />} {label}
-              </Link>
-            ))}
-            {user && (
-              <Link
-                to="/profile"
-                onClick={() => setMobileOpen(false)}
-                style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 12px', borderRadius: 8, marginBottom: 2, textDecoration: 'none', color: 'var(--gray-700)', fontSize: 14, fontFamily: "'Plus Jakarta Sans',sans-serif" }}
-              >
-                <User size={16} /> My Profile
-              </Link>
+                <LogOut size={18} /> Sign Out
+              </button>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <Button variant="outline" fullWidth onClick={() => { navigate('/login'); setMobileOpen(false) }}>
+                  Sign In
+                </Button>
+                <Button variant="primary" fullWidth onClick={() => { navigate('/signup'); setMobileOpen(false) }}>
+                  Sign Up
+                </Button>
+              </div>
             )}
           </div>
-        )}
-      </nav>
+        </div>
+      )}
+
+      <style>{`
+        @media (max-width: 768px) {
+          .desktop-nav { display: none !important; }
+          .mobile-menu-btn { display: flex !important; }
+        }
+      `}</style>
     </>
-  );
-};
+  )
+}

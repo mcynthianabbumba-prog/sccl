@@ -1,127 +1,102 @@
-// src/App.jsx
-import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './lib/AuthContext';
-import { ToastProvider }   from './components/ui/Toast';
-import { ErrorBoundary }   from './components/ui/ErrorBoundary';
-import { LoadingScreen }   from './components/ui/LoadingScreen';
-import { Navbar }          from './components/layout/Navbar';
-import { Footer }          from './components/layout/Footer';
-import { MobileNav }       from './components/layout/MobileNav';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { ThemeProvider } from './context/ThemeContext'
+import { AuthProvider } from './context/AuthContext'
+import { ProtectedRoute } from './components/ProtectedRoute'
 
-import { Home }                   from './pages/Home';
-import { Login, ForgotPassword }  from './pages/Auth';
-import { ResetPassword }          from './pages/ResetPassword';
-import { MapView }                from './pages/MapView';
-import { SearchPage }             from './pages/Search';
-import { FacilityProfile }        from './pages/FacilityProfile';
-import { Emergency }              from './pages/Emergency';
-import { Education }              from './pages/Education';
-import { HowItWorks }             from './pages/HowItWorks';
-import { Profile }                from './pages/Profile';
-import { NotFound }               from './pages/NotFound';
-import { DoctorLogin }            from './pages/DoctorLogin';
-import { DoctorSignup }           from './pages/DoctorSignup';
-import { DoctorDashboard }        from './pages/DoctorDashboard';
-import { AdminOwner }             from './pages/admin/AdminOwner';
-import { AdminHospital }          from './pages/admin/AdminHospital';
+// Public pages
+import HomePage from './pages/Home'
+import { LoginPage, SignupPage, ForgotPasswordPage } from './pages/Auth'
+import SearchPage from './pages/Search'
+import MapPage from './pages/Map'
+import FacilityPage from './pages/Facility'
+import EmergencyPage from './pages/Emergency'
+import HowItWorksPage from './pages/HowItWorks'
+import DashboardPage from './pages/Dashboard'
 
-// ─── Guards ───────────────────────────────────────────────────────────────────
-const ProtectedRoute = ({ children }) => {
-  const { user, loading } = useAuth();
-  if (loading) return <LoadingScreen message="Checking session…" />;
-  return user ? children : <Navigate to="/login" replace />;
-};
+// Doctor portal (admin2 - accessible via /hospital/*)
+import DoctorDashboard from './pages/hospital/DoctorPortal'
+import DoctorSettings from './pages/hospital/DoctorSettings'
+import DoctorSignupPage from './pages/hospital/DoctorSignup'
+import HospitalAdminPage from './pages/hospital/HospitalAdmin'
 
-const GuestRoute = ({ children }) => {
-  const { user, loading } = useAuth();
-  if (loading) return <LoadingScreen />;
-  return !user ? children : <Navigate to="/" replace />;
-};
-
-// Any authenticated staff member (doctor / hospital_admin / super_admin)
-const StaffRoute = ({ children }) => {
-  const { user, role, loading } = useAuth();
-  if (loading) return <LoadingScreen message="Checking credentials…" />;
-  if (!user)   return <Navigate to="/doctor/login" replace />;
-  if (!role || role === 'patient') return <Navigate to="/doctor/login" replace />;
-  return children;
-};
-
-// super_admin only
-const SuperAdminRoute = ({ children }) => {
-  const { user, isSuperAdmin, loading } = useAuth();
-  if (loading)       return <LoadingScreen message="Checking credentials…" />;
-  if (!user)         return <Navigate to="/doctor/login" replace />;
-  if (!isSuperAdmin) return <Navigate to="/doctor/dashboard" replace />;
-  return children;
-};
-
-// hospital_admin (or super_admin, who can access everything)
-const HospitalAdminRoute = ({ children }) => {
-  const { user, isHospitalAdmin, isSuperAdmin, loading } = useAuth();
-  if (loading)                             return <LoadingScreen message="Checking credentials…" />;
-  if (!user)                               return <Navigate to="/doctor/login" replace />;
-  if (!isHospitalAdmin && !isSuperAdmin)   return <Navigate to="/doctor/dashboard" replace />;
-  return children;
-};
-
-// ─── Layouts ─────────────────────────────────────────────────────────────────
-const AppLayout = ({ children }) => (
-  <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-    <Navbar />
-    <main style={{ flex: 1 }}><ErrorBoundary>{children}</ErrorBoundary></main>
-    <Footer />
-    <MobileNav />
-  </div>
-);
-
-const BareLayout = ({ children }) => (
-  <div style={{ minHeight: '100vh' }}><ErrorBoundary>{children}</ErrorBoundary></div>
-);
-
-// ─── Routes ──────────────────────────────────────────────────────────────────
-function AppRoutes() {
-  return (
-    <Routes>
-      {/* Public */}
-      <Route path="/"             element={<AppLayout><Home /></AppLayout>} />
-      <Route path="/map"          element={<AppLayout><MapView /></AppLayout>} />
-      <Route path="/search"       element={<AppLayout><SearchPage /></AppLayout>} />
-      <Route path="/facility/:id" element={<AppLayout><FacilityProfile /></AppLayout>} />
-      <Route path="/emergency"    element={<AppLayout><Emergency /></AppLayout>} />
-      <Route path="/education"    element={<AppLayout><Education /></AppLayout>} />
-      <Route path="/how-it-works" element={<AppLayout><HowItWorks /></AppLayout>} />
-
-      {/* Public user auth */}
-      <Route path="/login"           element={<GuestRoute><BareLayout><Login /></BareLayout></GuestRoute>} />
-      <Route path="/signup"          element={<GuestRoute><BareLayout><Login /></BareLayout></GuestRoute>} />
-      <Route path="/forgot-password" element={<GuestRoute><BareLayout><ForgotPassword /></BareLayout></GuestRoute>} />
-      <Route path="/reset-password"  element={<BareLayout><ResetPassword /></BareLayout>} />
-      <Route path="/profile"         element={<ProtectedRoute><AppLayout><Profile /></AppLayout></ProtectedRoute>} />
-
-      {/* Staff portal — not in public nav */}
-      <Route path="/doctor/login"     element={<BareLayout><DoctorLogin /></BareLayout>} />
-      <Route path="/doctor/signup"    element={<BareLayout><DoctorSignup /></BareLayout>} />
-      <Route path="/doctor/dashboard" element={<StaffRoute><BareLayout><DoctorDashboard /></BareLayout></StaffRoute>} />
-
-      {/* Admin portals — not in public nav */}
-      <Route path="/admin/owner"    element={<SuperAdminRoute><BareLayout><AdminOwner /></BareLayout></SuperAdminRoute>} />
-      <Route path="/admin/hospital" element={<HospitalAdminRoute><BareLayout><AdminHospital /></BareLayout></HospitalAdminRoute>} />
-
-      <Route path="*" element={<AppLayout><NotFound /></AppLayout>} />
-    </Routes>
-  );
-}
+// Site owner admin (admin1 - accessible via /sccl-admin)
+import AdminPage from './pages/admin/AdminPage'
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <ThemeProvider>
       <AuthProvider>
-        <ToastProvider>
-          <AppRoutes />
-        </ToastProvider>
+        <BrowserRouter>
+          <Routes>
+            {/* Public */}
+            <Route path="/" element={<HomePage />} />
+            <Route path="/search" element={<SearchPage />} />
+            <Route path="/map" element={<MapPage />} />
+            <Route path="/facility/:id" element={<FacilityPage />} />
+            <Route path="/emergency" element={<EmergencyPage />} />
+            <Route path="/how-it-works" element={<HowItWorksPage />} />
+
+            {/* Auth */}
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/signup" element={<SignupPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+
+            {/* Patient Dashboard */}
+            <Route path="/dashboard" element={
+              <ProtectedRoute><DashboardPage /></ProtectedRoute>
+            } />
+
+            {/* ============================================================
+                HOSPITAL PORTAL (admin2)
+                Accessible via /hospital/* — not linked from public nav
+                ============================================================ */}
+            <Route path="/hospital/register" element={<DoctorSignupPage />} />
+            <Route path="/doctor" element={
+              <ProtectedRoute requiredRole="doctor"><DoctorDashboard /></ProtectedRoute>
+            } />
+            <Route path="/doctor/settings" element={
+              <ProtectedRoute requiredRole="doctor"><DoctorSettings /></ProtectedRoute>
+            } />
+            <Route path="/hospital/manage" element={
+              <ProtectedRoute requiredRole="doctor"><HospitalAdminPage /></ProtectedRoute>
+            } />
+
+            {/* ============================================================
+                SITE OWNER ADMIN (admin1)
+                Accessible via /sccl-admin — not linked from public nav
+                ============================================================ */}
+            <Route path="/sccl-admin" element={
+              <ProtectedRoute><AdminPage /></ProtectedRoute>
+            } />
+
+            {/* Fallback */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
       </AuthProvider>
-    </BrowserRouter>
-  );
+    </ThemeProvider>
+  )
+}
+
+function NotFound() {
+  return (
+    <div style={{
+      minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+      background: 'var(--bg-primary)', flexDirection: 'column', gap: '16px', padding: '24px',
+      textAlign: 'center',
+    }}>
+      <div style={{ fontSize: '64px' }}>🔍</div>
+      <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '32px', fontWeight: 800 }}>404 — Page Not Found</h1>
+      <p style={{ color: 'var(--text-secondary)', fontSize: '16px' }}>The page you're looking for doesn't exist.</p>
+      <a href="/" style={{
+        display: 'inline-flex', alignItems: 'center', gap: '8px',
+        background: 'var(--accent-primary)', color: 'white',
+        padding: '12px 24px', borderRadius: 'var(--radius-md)',
+        textDecoration: 'none', fontWeight: 700, fontSize: '15px',
+        fontFamily: 'var(--font-body)', marginTop: '8px',
+      }}>
+        ← Go Home
+      </a>
+    </div>
+  )
 }

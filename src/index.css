@@ -1,91 +1,235 @@
-/* src/index.css */
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;600&display=swap');
+/* ============================================================
+   SCCL Uganda — Global Styles
+   Design: Clean medical precision with warm Ugandan identity
+   Fonts: Sora (display) + DM Sans (body)
+   ============================================================ */
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-:root {
-  --blue:        #1D4ED8;
-  --blue-light:  #3B82F6;
-  --blue-pale:   #EFF6FF;
-  --red:         #EF4444;
-  --red-light:   #FEE2E2;
-  --green:       #10B981;
-  --green-light: #D1FAE5;
-  --yellow:      #F59E0B;
-  --gray-50:     #F9FAFB;
-  --gray-100:    #F3F4F6;
-  --gray-200:    #E5E7EB;
-  --gray-300:    #D1D5DB;
-  --gray-400:    #9CA3AF;
-  --gray-500:    #6B7280;
-  --gray-600:    #4B5563;
-  --gray-700:    #374151;
-  --gray-800:    #1F2937;
-  --gray-900:    #111827;
-  --white:       #FFFFFF;
-  --radius-sm:   6px;
-  --radius:      10px;
-  --radius-lg:   16px;
-  --shadow-sm:   0 1px 3px rgba(0,0,0,.08);
-  --shadow:      0 4px 16px rgba(0,0,0,.08);
-  --shadow-lg:   0 8px 32px rgba(0,0,0,.12);
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
-html { scroll-behavior: smooth; }
+:root {
+  /* Brand Colors */
+  --blue-50: #eff6ff;
+  --blue-100: #dbeafe;
+  --blue-200: #bfdbfe;
+  --blue-400: #60a5fa;
+  --blue-500: #3b82f6;
+  --blue-600: #2563eb;
+  --blue-700: #1d4ed8;
+  --blue-900: #1e3a8a;
+
+  --red-400: #f87171;
+  --red-500: #ef4444;
+  --red-600: #dc2626;
+
+  --green-400: #4ade80;
+  --green-500: #22c55e;
+  --green-600: #16a34a;
+
+  --amber-400: #fbbf24;
+  --amber-500: #f59e0b;
+
+  /* Light Mode */
+  --bg-primary: #f8fafc;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f1f5f9;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f8fafc;
+
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --text-inverse: #ffffff;
+
+  --border-color: #e2e8f0;
+  --border-strong: #cbd5e1;
+
+  --accent-primary: #2563eb;
+  --accent-primary-hover: #1d4ed8;
+  --accent-secondary: #0ea5e9;
+  --accent-emergency: #dc2626;
+  --accent-success: #16a34a;
+  --accent-warning: #d97706;
+
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.07);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.08);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.08), 0 8px 10px -6px rgb(0 0 0 / 0.08);
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+
+  --nav-height: 64px;
+  --sidebar-width: 240px;
+
+  --font-display: 'Sora', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+
+  --transition-fast: 150ms ease;
+  --transition-base: 250ms ease;
+  --transition-slow: 400ms ease;
+}
+
+[data-theme="dark"] {
+  --bg-primary: #0a0f1a;
+  --bg-secondary: #0f172a;
+  --bg-tertiary: #1e293b;
+  --bg-card: #1e293b;
+  --bg-card-hover: #253449;
+
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --text-inverse: #0f172a;
+
+  --border-color: #1e293b;
+  --border-strong: #334155;
+
+  --accent-primary: #3b82f6;
+  --accent-primary-hover: #60a5fa;
+
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.4);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.5);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.6), 0 8px 10px -6px rgb(0 0 0 / 0.6);
+}
+
+html {
+  scroll-behavior: smooth;
+}
 
 body {
-  font-family: 'DM Sans', sans-serif;
-  font-size: 15px;
-  color: var(--gray-800);
-  background: var(--gray-50);
+  font-family: var(--font-body);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
   line-height: 1.6;
+  font-size: 15px;
+  transition: background-color var(--transition-base), color var(--transition-base);
   -webkit-font-smoothing: antialiased;
 }
 
-h1, h2, h3, h4, h5 {
-  font-family: 'Plus Jakarta Sans', sans-serif;
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  line-height: 1.2;
   font-weight: 700;
-  line-height: 1.25;
-  color: var(--gray-900);
+  color: var(--text-primary);
 }
 
-a { color: inherit; text-decoration: none; }
-button { cursor: pointer; font-family: inherit; }
-input, textarea, select { font-family: inherit; }
-img { max-width: 100%; display: block; }
+a {
+  color: var(--accent-primary);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
 
-/* Leaflet map fix */
-.leaflet-container { width: 100%; height: 100%; z-index: 1; }
+a:hover {
+  color: var(--accent-primary-hover);
+}
+
+input, textarea, select {
+  font-family: var(--font-body);
+}
 
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: var(--gray-100); }
-::-webkit-scrollbar-thumb { background: var(--gray-300); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: var(--gray-400); }
+::-webkit-scrollbar-track { background: var(--bg-tertiary); }
+::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* ============================================================
+   UTILITY CLASSES
+   ============================================================ */
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.container-sm {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
 
 /* Animations */
-@keyframes spin    { to { transform: rotate(360deg); } }
-@keyframes fadeIn  { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes shimmer { 0% { background-position: -400px 0; } 100% { background-position: 400px 0; } }
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 
-.fade-in { animation: fadeIn 0.25s ease both; }
+@keyframes fadeInLeft {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
 
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(0.8); opacity: 1; }
+  100% { transform: scale(2); opacity: 0; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.animate-fade-in { animation: fadeIn 0.4s ease both; }
+.animate-fade-in-delay-1 { animation: fadeIn 0.4s ease 0.1s both; }
+.animate-fade-in-delay-2 { animation: fadeIn 0.4s ease 0.2s both; }
+.animate-fade-in-delay-3 { animation: fadeIn 0.4s ease 0.3s both; }
+.animate-scale-in { animation: scaleIn 0.3s ease both; }
+
+/* Loading skeleton */
 .skeleton {
-  background: linear-gradient(90deg, var(--gray-100) 25%, var(--gray-200) 50%, var(--gray-100) 75%);
-  background-size: 400px 100%;
-  animation: shimmer 1.4s infinite;
-  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    var(--bg-tertiary) 25%,
+    var(--border-color) 50%,
+    var(--bg-tertiary) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--radius-sm);
 }
 
-.mobile-menu-btn { display: none; }
-
-@media (max-width: 900px) {
-  .desktop-nav { display: none !important; }
-  .mobile-menu-btn { display: flex !important; }
+/* Leaflet map fixes */
+.leaflet-container {
+  font-family: var(--font-body) !important;
+  border-radius: var(--radius-lg);
 }
+
+.leaflet-popup-content-wrapper {
+  background: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--shadow-xl) !important;
+  border: 1px solid var(--border-color) !important;
+}
+
+.leaflet-popup-tip {
+  background: var(--bg-card) !important;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
 
 @media (max-width: 768px) {
-  h1 { font-size: 2rem !important; }
-  .brand-panel { display: none !important; }
-  .hero-map { display: none !important; }
+  .container, .container-sm {
+    padding: 0 16px;
+  }
 }
