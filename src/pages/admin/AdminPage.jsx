@@ -33,7 +33,7 @@ const emptyHospital = {
 }
 
 export default function AdminPage() {
-  const { user, profile, signOut } = useAuth()
+  const { user, profile, loading: authLoading, signOut } = useAuth()
   const { theme, toggle } = useTheme()
   const [hospitals, setHospitals] = useState([])
   const [doctors, setDoctors] = useState([])
@@ -55,8 +55,8 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (!user) { navigate('/login'); return }
-    loadAll()
-  }, [user])
+    if (isAdmin) loadAll()
+  }, [user, isAdmin])
 
   async function loadAll() {
     setLoading(true)
@@ -126,6 +126,13 @@ export default function AdminPage() {
   const filteredHospitals = hospitals.filter(h =>
     h.name.toLowerCase().includes(searchQ.toLowerCase()) ||
     h.sub_county?.toLowerCase().includes(searchQ.toLowerCase())
+  )
+
+  // Show spinner while auth/profile is still resolving
+  if (authLoading || (user && !profile)) return (
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-primary)' }}>
+      <Spinner size={40} color="var(--accent-primary)" />
+    </div>
   )
 
   if (!isAdmin) return (

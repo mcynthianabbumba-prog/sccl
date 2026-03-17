@@ -219,7 +219,7 @@ export function DoctorLayout({ children }) {
 // DOCTOR DASHBOARD
 // ============================================================
 export default function DoctorDashboard() {
-  const { user, profile } = useAuth()
+  const { user, profile, loading: authLoading } = useAuth()
   const [stats, setStats] = useState({ patients: 0, appointments: 0, alerts: 0 })
   const [activity, setActivity] = useState([])
   const [appointments, setAppointments] = useState([])
@@ -227,6 +227,7 @@ export default function DoctorDashboard() {
   const navigate = useNavigate()
 
   useEffect(() => {
+    if (authLoading) return
     if (!user) { navigate('/login'); return }
     // In a real app, fetch actual data from doctor's hospital
     // Using mock data here for demo since no real patients are seeded

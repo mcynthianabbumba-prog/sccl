@@ -20,7 +20,7 @@ const SUB_COUNTIES = [
 ]
 
 export default function HospitalAdminPage() {
-  const { user, profile, signOut } = useAuth()
+  const { user, profile, loading: authLoading, signOut } = useAuth()
   const { theme, toggle } = useTheme()
   const [doctor, setDoctor] = useState(null)
   const [hospital, setHospital] = useState(null)
@@ -34,8 +34,36 @@ export default function HospitalAdminPage() {
   const navigate = useNavigate()
 
   useEffect(() => {
+    if (authLoading) return  // wait for auth to resolve
     if (!user) { navigate('/login'); return }
     async function load() {
+      // Admins bypass the doctor requirement
+      if (profile?.role === 'admin') {
+        // Load first available hospital for admin, or show hospital selector
+        const { data: hospitals } = await supabase
+          .from('hospitals')
+          .select('*, hospital_services(*), hospital_specialists(*)')
+          .eq('is_active', true)
+          .limit(1)
+        if (hospitals?.[0]) {
+          const h = hospitals[0]
+          setDoctor({ id: 'admin', hospital: h })
+          setHospital({
+            id: h.id, name: h.name || '', slug: h.slug || '',
+            description: h.description || '', address: h.address || '',
+            sub_county: h.sub_county || '', phone: h.phone || '',
+            email: h.email || '', website: h.website || '',
+            latitude: h.latitude || '', longitude: h.longitude || '',
+            emergency_available: h.emergency_available || false,
+            is_active: h.is_active !== false,
+          })
+          setServices(h.hospital_services || [])
+          setSpecialists(h.hospital_specialists || [])
+        }
+        setLoading(false)
+        return
+      }
+
       // Check if this user is an approved doctor
       const { data: doc } = await supabase
         .from('doctors')
@@ -62,7 +90,7 @@ export default function HospitalAdminPage() {
       setLoading(false)
     }
     load()
-  }, [user])
+  }, [user, authLoading, profile])
 
   const saveHospital = async () => {
     if (!hospital) return
@@ -124,7 +152,7 @@ export default function HospitalAdminPage() {
     setSpecialists(ss => ss.filter(s => s.id !== id))
   }
 
-  if (loading) return (
+  if (authLoading || loading) return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-primary)' }}>
       <Spinner size={40} color="var(--accent-primary)" />
     </div>

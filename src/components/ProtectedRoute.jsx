@@ -6,7 +6,8 @@ export function ProtectedRoute({ children, requiredRole }) {
   const { user, profile, loading } = useAuth()
   const location = useLocation()
 
-  if (loading) {
+  // Always wait for BOTH user AND profile to resolve before deciding
+  if (loading || (user && !profile)) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <Spinner size={36} color="var(--accent-primary)" />
