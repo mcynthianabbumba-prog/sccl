@@ -21,6 +21,7 @@ import HospitalAdminPage from './pages/hospital/HospitalAdmin'
 
 // Site owner admin (admin1 - accessible via /sccl-admin)
 import AdminPage from './pages/admin/AdminPage'
+import AdminRegisterPage from './pages/admin/AdminRegister'
 
 export default function App() {
   return (
@@ -68,6 +69,7 @@ export default function App() {
             <Route path="/sccl-admin" element={
               <ProtectedRoute><AdminPage /></ProtectedRoute>
             } />
+            <Route path="/admin/register" element={<AdminRegisterPage />} />
 
             {/* Fallback */}
             <Route path="*" element={<NotFound />} />
