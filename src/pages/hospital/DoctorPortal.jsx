@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import {
   Building, MapPin, Phone, Clock, Plus, Trash2,
-  Save, CheckCircle, Activity, LogOut, Sun, Moon
+  Save, CheckCircle, Activity, LogOut, Sun, Moon, ImagePlus, Star, X
 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
@@ -39,6 +39,9 @@ export default function DoctorPortal() {
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
   const [tab, setTab] = useState('details')
+  const [photos, setPhotos] = useState([])
+  const [uploading, setUploading] = useState(false)
+  const [photoError, setPhotoError] = useState('')
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -77,6 +80,14 @@ export default function DoctorPortal() {
       })
       setServices(h.hospital_services || [])
       setSpecialists(h.hospital_specialists || [])
+
+      // Load photos
+      const { data: photoData } = await supabase
+        .from('hospital_photos')
+        .select('*')
+        .eq('hospital_id', h.id)
+        .order('sort_order')
+      setPhotos(photoData || [])
       setHours(h.operating_hours || {
         Monday: { open: '08:00', close: '17:00', closed: false },
         Tuesday: { open: '08:00', close: '17:00', closed: false },
@@ -179,6 +190,7 @@ export default function DoctorPortal() {
     { id: 'services', label: '🩺 Services' },
     { id: 'specialists', label: '👨‍⚕️ Specialists' },
     { id: 'hours', label: '🕐 Hours' },
+    { id: 'photos', label: '📷 Photos' },
   ]
 
   return (
@@ -455,6 +467,19 @@ export default function DoctorPortal() {
             </div>
           </Card>
         )}
+
+        {/* ── Photos Tab ── */}
+        {tab === 'photos' && (
+          <PhotosTab
+            hospital={hospital}
+            photos={photos}
+            setPhotos={setPhotos}
+            uploading={uploading}
+            setUploading={setUploading}
+            photoError={photoError}
+            setPhotoError={setPhotoError}
+          />
+        )}
       </div>
 
       <style>{`
@@ -474,6 +499,266 @@ const timeInputStyle = {
   border: '1px solid var(--border-color)', background: 'var(--bg-secondary)',
   color: 'var(--text-primary)', fontFamily: 'var(--font-body)', fontSize: '13px',
   width: '100%',
+}
+
+
+
+// ─────────────────────────────────────────────────────────────
+// Photos Tab Component
+// ─────────────────────────────────────────────────────────────
+function PhotosTab({ hospital, photos, setPhotos, uploading, setUploading, photoError, setPhotoError }) {
+  const MAX_PHOTOS = 4
+
+  const uploadPhoto = async (e) => {
+    const files = Array.from(e.target.files)
+    if (!files.length) return
+
+    const remaining = MAX_PHOTOS - photos.length
+    if (remaining <= 0) {
+      setPhotoError(`Maximum ${MAX_PHOTOS} photos allowed. Delete one first.`)
+      return
+    }
+
+    const toUpload = files.slice(0, remaining)
+    setUploading(true)
+    setPhotoError('')
+
+    for (const file of toUpload) {
+      if (file.size > 5 * 1024 * 1024) {
+        setPhotoError('Each photo must be under 5MB.')
+        continue
+      }
+
+      const ext = file.name.split('.').pop()
+      const path = `${hospital.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+
+      const { error: uploadErr } = await supabase.storage
+        .from('hospital-photos')
+        .upload(path, file, { cacheControl: '3600', upsert: false })
+
+      if (uploadErr) { setPhotoError('Upload failed: ' + uploadErr.message); continue }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('hospital-photos')
+        .getPublicUrl(path)
+
+      const isCover = photos.length === 0  // first photo becomes cover
+
+      const { data: newPhoto } = await supabase
+        .from('hospital_photos')
+        .insert({
+          hospital_id: hospital.id,
+          url: publicUrl,
+          storage_path: path,
+          is_cover: isCover,
+          sort_order: photos.length,
+        })
+        .select()
+        .single()
+
+      if (newPhoto) {
+        setPhotos(p => [...p, newPhoto])
+        // If this is the first photo, also update hospital.photo_url
+        if (isCover) {
+          await supabase.from('hospitals').update({ photo_url: publicUrl }).eq('id', hospital.id)
+        }
+      }
+    }
+
+    setUploading(false)
+    e.target.value = ''
+  }
+
+  const deletePhoto = async (photo) => {
+    // Remove from storage
+    await supabase.storage.from('hospital-photos').remove([photo.storage_path])
+    // Remove from DB
+    await supabase.from('hospital_photos').delete().eq('id', photo.id)
+
+    const remaining = photos.filter(p => p.id !== photo.id)
+    setPhotos(remaining)
+
+    // If we deleted the cover, promote the next photo
+    if (photo.is_cover && remaining.length > 0) {
+      const next = remaining[0]
+      await supabase.from('hospital_photos').update({ is_cover: true }).eq('id', next.id)
+      await supabase.from('hospitals').update({ photo_url: next.url }).eq('id', hospital.id)
+      setPhotos(prev => prev.map(p => p.id === next.id ? { ...p, is_cover: true } : p))
+    } else if (remaining.length === 0) {
+      // No photos left — clear cover
+      await supabase.from('hospitals').update({ photo_url: null }).eq('id', hospital.id)
+    }
+  }
+
+  const setCover = async (photo) => {
+    // Unset all covers, set this one
+    await supabase.from('hospital_photos')
+      .update({ is_cover: false }).eq('hospital_id', hospital.id)
+    await supabase.from('hospital_photos')
+      .update({ is_cover: true }).eq('id', photo.id)
+    await supabase.from('hospitals')
+      .update({ photo_url: photo.url }).eq('id', hospital.id)
+    setPhotos(prev => prev.map(p => ({ ...p, is_cover: p.id === photo.id })))
+  }
+
+  return (
+    <div style={{
+      background: 'var(--bg-card)', border: '1px solid var(--border-color)',
+      borderRadius: 'var(--radius-lg)', padding: '24px',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '6px', flexWrap: 'wrap', gap: '12px' }}>
+        <div>
+          <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '17px', fontWeight: 700, marginBottom: '4px' }}>
+            Hospital Photos
+          </h3>
+          <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+            Up to {MAX_PHOTOS} photos · JPEG, PNG or WebP · Max 5MB each.
+            The ★ cover photo appears as the header on your public profile.
+          </p>
+        </div>
+        <span style={{
+          fontSize: '12px', fontWeight: 700,
+          color: photos.length >= MAX_PHOTOS ? 'var(--accent-emergency)' : 'var(--text-muted)',
+        }}>
+          {photos.length} / {MAX_PHOTOS}
+        </span>
+      </div>
+
+      {photoError && (
+        <div style={{
+          margin: '12px 0', padding: '10px 14px',
+          background: '#fef2f2', border: '1px solid #fecaca',
+          borderRadius: 'var(--radius-md)', fontSize: '13px', color: '#b91c1c',
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        }}>
+          {photoError}
+          <button onClick={() => setPhotoError('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#b91c1c', display: 'flex' }}>
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
+      {/* Photo grid */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+        gap: '16px',
+        marginTop: '20px',
+      }}>
+        {/* Existing photos */}
+        {photos.map(photo => (
+          <div key={photo.id} style={{
+            position: 'relative', borderRadius: 'var(--radius-lg)', overflow: 'hidden',
+            border: photo.is_cover ? '2px solid var(--accent-primary)' : '1px solid var(--border-color)',
+            aspectRatio: '4/3',
+            background: 'var(--bg-tertiary)',
+          }}>
+            <img
+              src={photo.url}
+              alt="Hospital"
+              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+            />
+
+            {/* Cover badge */}
+            {photo.is_cover && (
+              <div style={{
+                position: 'absolute', top: '8px', left: '8px',
+                background: 'var(--accent-primary)', color: 'white',
+                fontSize: '10px', fontWeight: 800, letterSpacing: '0.06em',
+                padding: '3px 8px', borderRadius: 'var(--radius-full)',
+                display: 'flex', alignItems: 'center', gap: '4px',
+              }}>
+                <Star size={9} style={{ fill: 'white' }} /> COVER
+              </div>
+            )}
+
+            {/* Hover actions */}
+            <div style={{
+              position: 'absolute', inset: 0,
+              background: 'rgba(0,0,0,0)',
+              display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+              gap: '8px', padding: '10px',
+              transition: 'background 0.2s',
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.45)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,0,0,0)'}
+            >
+              {!photo.is_cover && (
+                <button
+                  onClick={() => setCover(photo)}
+                  title="Set as cover photo"
+                  style={{
+                    background: 'rgba(255,255,255,0.9)', border: 'none', borderRadius: '8px',
+                    padding: '6px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center',
+                    gap: '5px', fontSize: '11px', fontWeight: 700, color: 'var(--blue-700)',
+                    fontFamily: 'var(--font-body)',
+                  }}
+                >
+                  <Star size={12} /> Set Cover
+                </button>
+              )}
+              <button
+                onClick={() => deletePhoto(photo)}
+                title="Delete photo"
+                style={{
+                  background: 'rgba(220,38,38,0.9)', border: 'none', borderRadius: '8px',
+                  padding: '6px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center',
+                  color: 'white',
+                }}
+              >
+                <Trash2 size={13} />
+              </button>
+            </div>
+          </div>
+        ))}
+
+        {/* Upload slot — only show if under limit */}
+        {photos.length < MAX_PHOTOS && (
+          <label style={{
+            aspectRatio: '4/3',
+            border: `2px dashed ${uploading ? 'var(--accent-primary)' : 'var(--border-strong)'}`,
+            borderRadius: 'var(--radius-lg)',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            gap: '10px', cursor: uploading ? 'wait' : 'pointer',
+            background: uploading ? 'var(--blue-50)' : 'var(--bg-tertiary)',
+            transition: 'all 0.2s',
+          }}
+          onMouseEnter={e => { if (!uploading) e.currentTarget.style.borderColor = 'var(--accent-primary)' }}
+          onMouseLeave={e => { if (!uploading) e.currentTarget.style.borderColor = 'var(--border-strong)' }}
+          >
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              multiple
+              onChange={uploadPhoto}
+              disabled={uploading}
+              style={{ display: 'none' }}
+            />
+            {uploading ? (
+              <>
+                <div style={{ width: 24, height: 24, border: '3px solid var(--accent-primary)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
+                <span style={{ fontSize: '12px', color: 'var(--accent-primary)', fontWeight: 600 }}>Uploading...</span>
+              </>
+            ) : (
+              <>
+                <div style={{ width: 44, height: 44, borderRadius: 'var(--radius-md)', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
+                  <ImagePlus size={22} />
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '2px' }}>
+                    Click to upload
+                  </p>
+                  <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                    {MAX_PHOTOS - photos.length} slot{MAX_PHOTOS - photos.length !== 1 ? 's' : ''} remaining
+                  </p>
+                </div>
+              </>
+            )}
+          </label>
+        )}
+      </div>
+    </div>
+  )
 }
 
 function FullSpinner() {

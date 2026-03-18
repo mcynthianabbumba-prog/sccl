@@ -24,6 +24,7 @@ export default function FacilityPage() {
   const [loading, setLoading] = useState(true)
   const [isFavorited, setIsFavorited] = useState(false)
   const [specialists, setSpecialists] = useState([])
+  const [photos, setPhotos] = useState([])
   const { user } = useAuth()
   const navigate = useNavigate()
 
@@ -47,6 +48,15 @@ export default function FacilityPage() {
 
       setHospital(data)
       setSpecialists(data?.hospital_specialists || [])
+
+      // Load photos
+      const { data: photoData } = await supabase
+        .from('hospital_photos')
+        .select('*')
+        .eq('hospital_id', data.id)
+        .order('sort_order')
+      setPhotos(photoData || [])
+
       setLoading(false)
 
       if (user && data) {
@@ -176,6 +186,30 @@ export default function FacilityPage() {
           </div>
         </div>
       </div>
+
+      {/* Photo Gallery — only if extra photos exist */}
+      {photos.length > 1 && (
+        <div style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-color)', padding: '16px 0' }}>
+          <div className="container" style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '10px' }}>
+              {photos.map(photo => (
+                <div key={photo.id} style={{
+                  aspectRatio: '4/3', borderRadius: 'var(--radius-md)',
+                  overflow: 'hidden', border: photo.is_cover ? '2px solid var(--accent-primary)' : '1px solid var(--border-color)',
+                  cursor: 'pointer',
+                }}
+                onClick={() => window.open(photo.url, '_blank')}
+                >
+                  <img src={photo.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'transform 0.2s' }}
+                    onMouseEnter={e => e.target.style.transform = 'scale(1.04)'}
+                    onMouseLeave={e => e.target.style.transform = 'scale(1)'}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Body */}
       <div className="container" style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px 24px' }}>
