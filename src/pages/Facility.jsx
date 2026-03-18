@@ -29,11 +29,21 @@ export default function FacilityPage() {
 
   useEffect(() => {
     async function load() {
-      const { data } = await supabase
+      // Try slug first, then fall back to UUID match
+      const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+      const isUuid = uuidPattern.test(id)
+
+      let query = supabase
         .from('hospitals')
         .select('*, hospital_services(*), hospital_specialists(*)')
-        .or(`slug.eq.${id},id.eq.${id}`)
-        .single()
+
+      if (isUuid) {
+        query = query.eq('id', id)
+      } else {
+        query = query.eq('slug', id)
+      }
+
+      const { data } = await query.maybeSingle()
 
       setHospital(data)
       setSpecialists(data?.hospital_specialists || [])
