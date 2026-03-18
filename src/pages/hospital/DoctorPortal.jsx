@@ -55,7 +55,7 @@ export default function DoctorPortal() {
       .from('doctors')
       .select('hospital_id')
       .eq('profile_id', user.id)
-      .single()
+      .maybeSingle()
 
     if (!doc?.hospital_id) { setLoading(false); return }
 
