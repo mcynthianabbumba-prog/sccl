@@ -62,7 +62,7 @@ export default function FacilityPage() {
       if (user && data) {
         const { data: fav } = await supabase
           .from('patient_favorites')
-          .select('id').eq('patient_id', user.id).eq('hospital_id', data.id).single()
+          .select('id').eq('patient_id', user.id).eq('hospital_id', data.id).maybeSingle()
         setIsFavorited(!!fav)
       }
     }
@@ -102,14 +102,25 @@ export default function FacilityPage() {
   const hasService = (key) => services.some(s => s.service_type === key && s.is_available)
   const diagnosisServices = services.filter(s => ['newborn_screening', 'genetic_counseling', 'hemoglobin_electrophoresis'].includes(s.service_type))
 
-  const defaultHours = {
-    Monday: '08:00 AM - 05:00 PM',
-    Tuesday: '08:00 AM - 05:00 PM',
-    Wednesday: '08:00 AM - 05:00 PM',
-    Thursday: '08:00 AM - 05:00 PM',
-    Friday: '08:00 AM - 05:00 PM',
+  // operating_hours can be either the new object format {day:{open,close,closed}}
+  // or the old string format {day:'08:00 AM - 05:00 PM'} — handle both
+  const rawHours = hospital.operating_hours || {}
+  const formatHours = (day) => {
+    const h = rawHours[day]
+    if (!h) return null
+    if (typeof h === 'string') return h  // legacy string format
+    if (h.closed) return null            // closed day
+    // new object format: {open:'08:00', close:'17:00', closed:false}
+    const fmt = (t) => {
+      if (!t) return ''
+      const [hh, mm] = t.split(':')
+      const hour = parseInt(hh, 10)
+      const ampm = hour >= 12 ? 'PM' : 'AM'
+      const h12  = hour % 12 || 12
+      return `${h12}:${mm} ${ampm}`
+    }
+    return `${fmt(h.open)} - ${fmt(h.close)}`
   }
-  const hours = hospital.operating_hours || defaultHours
 
   return (
     <Layout>
@@ -306,14 +317,17 @@ export default function FacilityPage() {
                 <Clock size={16} style={{ color: 'var(--accent-primary)' }} /> Operating Hours
               </h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {DAYS.map(day => (
-                  <div key={day} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
-                    <span style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>{day}</span>
-                    <span style={{ color: hours[day] ? 'var(--text-primary)' : 'var(--text-muted)', fontWeight: hours[day] ? 500 : 400 }}>
-                      {hours[day] || 'Closed'}
-                    </span>
-                  </div>
-                ))}
+                {DAYS.map(day => {
+                  const label = formatHours(day)
+                  return (
+                    <div key={day} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+                      <span style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>{day}</span>
+                      <span style={{ color: label ? 'var(--text-primary)' : 'var(--text-muted)', fontWeight: label ? 500 : 400 }}>
+                        {label || 'Closed'}
+                      </span>
+                    </div>
+                  )
+                })}
               </div>
               {hospital.emergency_available && (
                 <div style={{
