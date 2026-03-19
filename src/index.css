@@ -1,7 +1,5 @@
 /* ============================================================
    SCCL Uganda — Global Styles
-   Design: Clean medical precision with warm Ugandan identity
-   Fonts: Sora (display) + DM Sans (body)
    ============================================================ */
 
 *, *::before, *::after {
@@ -102,6 +100,8 @@
 
 html {
   scroll-behavior: smooth;
+  /* Prevent horizontal overflow on mobile */
+  overflow-x: hidden;
 }
 
 body {
@@ -112,6 +112,9 @@ body {
   font-size: 15px;
   transition: background-color var(--transition-base), color var(--transition-base);
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  /* Prevent text size inflation on iOS */
+  -webkit-text-size-adjust: 100%;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -126,13 +129,24 @@ a {
   text-decoration: none;
   transition: color var(--transition-fast);
 }
-
-a:hover {
-  color: var(--accent-primary-hover);
-}
+a:hover { color: var(--accent-primary-hover); }
 
 input, textarea, select {
   font-family: var(--font-body);
+  /* Prevent iOS zoom on focus (needs font-size >= 16px equivalent) */
+  font-size: max(16px, 1em);
+}
+
+/* Fix iOS zoom — only for actual text inputs, not buttons */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="search"],
+input[type="tel"],
+textarea,
+select {
+  font-size: 16px;
 }
 
 /* Scrollbar */
@@ -142,7 +156,7 @@ input, textarea, select {
 ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
 
 /* ============================================================
-   UTILITY CLASSES
+   LAYOUT UTILITIES
    ============================================================ */
 
 .container {
@@ -157,41 +171,35 @@ input, textarea, select {
   padding: 0 24px;
 }
 
-/* Animations */
+/* ============================================================
+   ANIMATIONS
+   ============================================================ */
+
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
+  to   { opacity: 1; transform: translateY(0); }
 }
-
-@keyframes fadeInLeft {
-  from { opacity: 0; transform: translateX(-20px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-
 @keyframes scaleIn {
   from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
+  to   { opacity: 1; transform: scale(1); }
 }
-
-@keyframes pulse-ring {
-  0% { transform: scale(0.8); opacity: 1; }
-  100% { transform: scale(2); opacity: 0; }
-}
-
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
 }
-
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+@keyframes pulse-ring {
+  0%   { transform: scale(0.8); opacity: 1; }
+  100% { transform: scale(2);   opacity: 0; }
+}
 
-.animate-fade-in { animation: fadeIn 0.4s ease both; }
-.animate-fade-in-delay-1 { animation: fadeIn 0.4s ease 0.1s both; }
-.animate-fade-in-delay-2 { animation: fadeIn 0.4s ease 0.2s both; }
-.animate-fade-in-delay-3 { animation: fadeIn 0.4s ease 0.3s both; }
-.animate-scale-in { animation: scaleIn 0.3s ease both; }
+.animate-fade-in           { animation: fadeIn 0.4s ease both; }
+.animate-fade-in-delay-1   { animation: fadeIn 0.4s ease 0.1s both; }
+.animate-fade-in-delay-2   { animation: fadeIn 0.4s ease 0.2s both; }
+.animate-fade-in-delay-3   { animation: fadeIn 0.4s ease 0.3s both; }
+.animate-scale-in          { animation: scaleIn 0.3s ease both; }
 
 /* Loading skeleton */
 .skeleton {
@@ -206,12 +214,14 @@ input, textarea, select {
   border-radius: var(--radius-sm);
 }
 
-/* Leaflet map fixes */
+/* ============================================================
+   LEAFLET MAP
+   ============================================================ */
+
 .leaflet-container {
   font-family: var(--font-body) !important;
   border-radius: var(--radius-lg);
 }
-
 .leaflet-popup-content-wrapper {
   background: var(--bg-card) !important;
   color: var(--text-primary) !important;
@@ -219,17 +229,190 @@ input, textarea, select {
   box-shadow: var(--shadow-xl) !important;
   border: 1px solid var(--border-color) !important;
 }
-
-.leaflet-popup-tip {
-  background: var(--bg-card) !important;
-}
+.leaflet-popup-tip { background: var(--bg-card) !important; }
 
 /* ============================================================
-   RESPONSIVE
+   RESPONSIVE — MOBILE FIRST
    ============================================================ */
 
+/* Small phones (≤ 480px) */
+@media (max-width: 480px) {
+  :root { --nav-height: 56px; }
+
+  .container, .container-sm {
+    padding: 0 14px;
+  }
+
+  body { font-size: 14px; }
+
+  /* Tighten default section padding */
+  section { padding-top: 40px !important; padding-bottom: 40px !important; }
+}
+
+/* Phones (≤ 640px) */
+@media (max-width: 640px) {
+  .container, .container-sm {
+    padding: 0 16px;
+  }
+
+  /* Any 2-col grid becomes single col on phone */
+  .form-2col,
+  .stats-3,
+  .stats-grid,
+  .hero-grid,
+  .dashboard-grid,
+  .facility-grid,
+  .settings-grid,
+  .getting-care-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+
+  /* Hide decorative hero image panel */
+  .hero-map { display: none !important; }
+
+  /* Full-width buttons in tight spaces */
+  .mobile-full { width: 100% !important; }
+}
+
+/* Tablets (≤ 768px) */
 @media (max-width: 768px) {
   .container, .container-sm {
     padding: 0 16px;
   }
+
+  /* Desktop nav items hide on mobile — handled per-component */
+  .desktop-nav { display: none !important; }
+  .mobile-menu-btn { display: flex !important; }
+
+  /* Search page sidebar */
+  .search-sidebar { display: none !important; }
+  .mobile-filter-btn { display: flex !important; }
+
+  /* Map panel sidebar */
+  .map-panel { display: none !important; }
+
+  /* Auth pages: hide left panel */
+  .auth-side { display: none !important; }
+}
+
+/* Medium screens (≤ 900px) */
+@media (max-width: 900px) {
+  .hero-grid    { grid-template-columns: 1fr !important; gap: 32px !important; }
+  .hero-map     { display: none !important; }
+  .facility-grid { grid-template-columns: 1fr !important; }
+  .dashboard-grid { grid-template-columns: 1fr !important; }
+  .stats-3      { grid-template-columns: repeat(2, 1fr) !important; }
+
+  /* Doctor/Admin sidebars go off-canvas */
+  .doctor-sidebar {
+    transform: translateX(-100%);
+    position: fixed !important;
+    transition: transform 0.25s ease;
+    z-index: 50;
+  }
+  .doctor-sidebar.open { transform: translateX(0); }
+  .doctor-main { margin-left: 0 !important; }
+  .sidebar-toggle { display: flex !important; }
+}
+
+/* Ensure images never overflow */
+img { max-width: 100%; height: auto; }
+
+/* Tap targets: minimum 44px on mobile */
+@media (max-width: 768px) {
+  button, a, [role="button"] {
+    min-height: 36px;
+  }
+}
+
+/* ============================================================
+   MOBILE POLISH — targeted fixes for known rough spots
+   ============================================================ */
+
+/* Map page: full height on mobile without sidebar */
+@media (max-width: 768px) {
+  /* Give the map page its own height so it doesn't collapse */
+  .map-page-container {
+    height: calc(100vh - var(--nav-height));
+    flex-direction: column;
+  }
+
+  /* Search result cards: stack image on top */
+  .result-img {
+    width: 100% !important;
+    height: 160px !important;
+  }
+
+  /* Facility hero buttons: stack on very small screens */
+  .facility-hero-actions {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* Admin/Doctor portals: full-width main on mobile */
+  .doctor-main,
+  .admin-main {
+    margin-left: 0 !important;
+  }
+
+  /* Modal: full screen on mobile */
+  .modal-inner {
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0 !important;
+    max-height: 95vh !important;
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
+
+/* ── Typography scaling ── */
+@media (max-width: 480px) {
+  /* Headings scale down gracefully */
+  h1 { font-size: clamp(22px, 6vw, 32px) !important; }
+  h2 { font-size: clamp(18px, 5vw, 26px) !important; }
+  h3 { font-size: clamp(15px, 4vw, 20px) !important; }
+
+  /* Stat values on homepage */
+  .stat-value { font-size: clamp(20px, 6vw, 32px) !important; }
+
+  /* Tighter card padding on small phones */
+  .card-tight { padding: 14px !important; }
+}
+
+/* ── Admin sidebar: slide in from left on mobile ── */
+@media (max-width: 900px) {
+  /* Sidebar open state toggled by JS adding .open class */
+  .doctor-sidebar {
+    transform: translateX(-100%) !important;
+    transition: transform 0.25s ease !important;
+    z-index: 200 !important;
+  }
+  .doctor-sidebar.open {
+    transform: translateX(0) !important;
+    box-shadow: var(--shadow-xl) !important;
+  }
+}
+
+/* ── Leaflet map: remove border-radius on mobile so it fills edge-to-edge ── */
+@media (max-width: 640px) {
+  .leaflet-container {
+    border-radius: 0 !important;
+  }
+}
+
+/* ── Prevent overflow from wide tables ── */
+table {
+  display: block;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── Footer: ensure collapsible sections have good tap targets ── */
+.footer-collapsible button {
+  min-height: 48px !important;
+  padding: 12px 0 !important;
 }

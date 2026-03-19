@@ -64,7 +64,7 @@ export default function HomePage() {
       {/* Hero */}
       <section style={{
         background: 'var(--bg-primary)',
-        paddingTop: '72px', paddingBottom: '80px',
+        paddingTop: 'clamp(36px, 6vw, 72px)', paddingBottom: 'clamp(40px, 6vw, 80px)',
         position: 'relative', overflow: 'hidden',
       }}>
         {/* Decorative bg */}
@@ -224,8 +224,8 @@ export default function HomePage() {
 
           {/* Stats Row */}
           <div style={{
-            display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: '16px', marginTop: '48px',
+            display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+            gap: '12px', marginTop: 'clamp(24px, 4vw, 48px)',
           }} className="stats-grid">
             <HeroStat icon={Activity} value={stats.hospitals} label="Total Health Facilities" color="var(--accent-primary)" />
             <HeroStat icon={Stethoscope} value={stats.diagnosis} label="Diagnosis Services" color="var(--accent-secondary)" />
@@ -235,7 +235,7 @@ export default function HomePage() {
       </section>
 
       {/* Featured Facilities */}
-      <section style={{ padding: '64px 0', background: 'var(--bg-secondary)' }}>
+      <section style={{ padding: 'clamp(32px, 5vw, 64px) 0', background: 'var(--bg-secondary)' }}>
         <div className="container" style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
             <div>
@@ -281,7 +281,7 @@ export default function HomePage() {
       </section>
 
       {/* Resources & Support */}
-      <section style={{ padding: '64px 0', background: 'var(--bg-primary)' }}>
+      <section style={{ padding: 'clamp(32px, 5vw, 64px) 0', background: 'var(--bg-primary)' }}>
         <div className="container" style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px' }}>
           <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '28px', fontWeight: 800, marginBottom: '8px' }}>
             Resources & Support

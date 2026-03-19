@@ -41,7 +41,7 @@ export default function HowItWorksPage() {
 
   return (
     <Layout>
-      <div style={{ maxWidth: '800px', margin: '0 auto', padding: '40px 24px 60px' }}>
+      <div style={{ maxWidth: '800px', margin: '0 auto', padding: 'clamp(20px, 4vw, 40px) clamp(16px, 4vw, 24px) clamp(32px, 5vw, 60px)' }}>
         {/* Breadcrumb */}
         <p style={{ fontSize: '12px', color: 'var(--accent-primary)', fontWeight: 600, marginBottom: '12px', letterSpacing: '0.06em' }}>
           USER EDUCATION

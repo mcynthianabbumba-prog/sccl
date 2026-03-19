@@ -114,7 +114,7 @@ export default function FacilityPage() {
   return (
     <Layout>
       {/* Hero */}
-      <div style={{ position: 'relative', height: '240px', background: 'linear-gradient(135deg, #1e3a8a, #2563eb)', overflow: 'hidden' }}>
+      <div style={{ position: 'relative', height: 'clamp(160px, 30vw, 240px)', background: 'linear-gradient(135deg, #1e3a8a, #2563eb)', overflow: 'hidden' }}>
         {hospital.photo_url && (
           <img
             src={hospital.photo_url}
@@ -212,7 +212,7 @@ export default function FacilityPage() {
       )}
 
       {/* Body */}
-      <div className="container" style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px 24px' }}>
+      <div className="container" style={{ maxWidth: '1200px', margin: '0 auto', padding: 'clamp(20px, 3vw, 32px) clamp(16px, 4vw, 24px)' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '28px' }} className="facility-grid">
 
           {/* Left */}

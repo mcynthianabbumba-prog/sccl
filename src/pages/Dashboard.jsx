@@ -33,7 +33,7 @@ export default function DashboardPage() {
 
   return (
     <Layout>
-      <div style={{ maxWidth: '960px', margin: '0 auto', padding: '36px 24px' }}>
+      <div style={{ maxWidth: '960px', margin: '0 auto', padding: 'clamp(20px, 4vw, 36px) clamp(16px, 4vw, 24px)' }}>
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '32px', flexWrap: 'wrap', gap: '16px' }}>
           <div>

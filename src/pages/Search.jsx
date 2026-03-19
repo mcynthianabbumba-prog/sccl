@@ -115,7 +115,7 @@ export default function SearchPage() {
         <aside style={{
           width: '220px', flexShrink: 0,
           borderRight: '1px solid var(--border-color)',
-          padding: '28px 20px',
+          padding: 'clamp(16px, 2vw, 28px) clamp(12px, 2vw, 20px)',
           background: 'var(--bg-secondary)',
           display: 'flex', flexDirection: 'column',
         }} className="search-sidebar">

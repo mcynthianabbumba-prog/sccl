@@ -53,7 +53,7 @@ export default function EmergencyPage() {
 
   return (
     <Layout>
-      <div style={{ maxWidth: '760px', margin: '0 auto', padding: '40px 24px' }}>
+      <div style={{ maxWidth: '760px', margin: '0 auto', padding: 'clamp(20px, 4vw, 40px) clamp(16px, 4vw, 24px)' }}>
 
         {/* Location breadcrumb */}
         <div style={{

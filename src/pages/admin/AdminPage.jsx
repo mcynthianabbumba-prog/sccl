@@ -333,7 +333,7 @@ export default function AdminPage() {
           </button>
         </header>
 
-        <main style={{ padding: '28px 24px' }}>
+        <main style={{ padding: 'clamp(16px, 3vw, 28px) clamp(14px, 3vw, 24px)' }}>
           {alert && (
             <Alert type={alert.type} onClose={() => setAlert(null)} style={{ marginBottom: '20px' }}>
               {alert.msg}
